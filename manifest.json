@@ -1,0 +1,11 @@
+{
+	"id": "pertinent-questions",
+	"name": "Pertinent Questions",
+	"version": "0.0.1",
+	"minAppVersion": "1.3.4",
+	"description": "Critical Thinking with Pertinent Questions. Ask your friends, family, colleagues and political representatives these questions to stimulate thought and debate",
+	"author": "BubbleBurster",
+	"authorUrl": "https://projectbubbleburst.com/People/B",
+	"fundingUrl": "https://projectbubbleburst.com/Support+Us",
+	"isDesktopOnly": false
+}
