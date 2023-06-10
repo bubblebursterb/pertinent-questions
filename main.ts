@@ -36,8 +36,8 @@ export default class PertinentQuestions extends Plugin {
 
 		// Add command to launch Ask Pertinent Questions
 		this.addCommand({
-			id: 'ask-pertinent-questions',
-			name: 'Ask Pertinent Questions',
+			id: 'generate-pertinent-questions',
+			name: 'Generate Pertinent Questions',
 			callback: async () => {
 				const categories: string[] = [];
 				this.findAllCategories().forEach(cat => {
@@ -45,13 +45,16 @@ export default class PertinentQuestions extends Plugin {
 
 				});
 
-				const contacts: string[] = [];
+				const contacts: string[][] = [];
 
 				let allContacts = await this.getAllContacts();
+				if (allContacts != null){
+					allContacts.forEach(contact => {
+						contacts.unshift(contact);
+					});
+				}
 
-				allContacts.forEach(contact => {
-					contacts.unshift(contact);
-				});
+				
 
 				// Need to iterate through each contact AND 
 				const suggestModal = new PertinentQuestionsSuggestModal(this.app, categories, contacts, this.settings.outputFolder, this.settings.questionsFolder).open();
@@ -72,12 +75,12 @@ export default class PertinentQuestions extends Plugin {
 	}
 
 
-	async getAllContacts(): Promise<string[]> {
+	async getAllContacts(): Promise<string[][] | null>  {
 		const files = this.app.vault.getMarkdownFiles();
 
 
 		let found = false;
-		const contacts: string[] = [];
+		const contacts: string[][] = [];
 
 		for (let i = 0; i < files.length; i++) {
 			const fileName = files[i].name;
@@ -103,7 +106,7 @@ export default class PertinentQuestions extends Plugin {
 		} else {
 			return contacts;
 		}
-		return undefined;
+		return null;
 
 	}
 
@@ -111,7 +114,7 @@ export default class PertinentQuestions extends Plugin {
 		const files = this.app.vault.getMarkdownFiles()
 		const categories = [];
 
-		function extractSecondLevelFolder(str): string {
+		function extractSecondLevelFolder(str :string): string | null{
 			const regex = /\/([^\/]*)\//;
 			const match = str.match(regex);
 			return match ? match[1] : null;
@@ -121,8 +124,8 @@ export default class PertinentQuestions extends Plugin {
 
 			const thePath = files[i].path;
 			if (thePath.startsWith(this.settings.questionsFolder)) {
-				const substring: string = extractSecondLevelFolder(thePath);
-				if (substring) {
+				const substring = extractSecondLevelFolder(thePath);
+				if (substring != null) {
 					categories.unshift(substring);
 					found = true;
 				}
@@ -153,12 +156,12 @@ export default class PertinentQuestions extends Plugin {
 
 class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 	categories: string[];
-	contacts: string[];
+	contacts: string[][];
 	outputFolder: string;
 	questionsFolder: string;
 	vault: Vault;
 
-	constructor(app: App, categories: string[], contacts: string[], outputFolder: string, questionsFolder: string) {
+	constructor(app: App, categories: string[], contacts: string[][], outputFolder: string, questionsFolder: string) {
 		super(app);
 		this.vault = app.vault;
 		this.categories = categories;
@@ -207,7 +210,7 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 
 				const [title, firstName, lastName, emailAddress] = this.contacts[i];
 				const theSubject = "SUBJECT GOES HERE";
-				const theFileMetaData = `---\nsent: false\ncategory: ${this.categories[j]}\n---`;
+				const theFileMetaData = `---\nsent: false\ncategory: ${this.categories[j]}\n---\n\n`;
 
 
 				const theBody = "BODY GOES HERE";
@@ -258,9 +261,9 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 }
 
 class PersistentSettingTab extends PluginSettingTab {
-	plugin: MyPlugin;
+	plugin: PertinentQuestions;
 
-	constructor(app: App, plugin: MyPlugin) {
+	constructor(app: App, plugin: PertinentQuestions) {
 		super(app, plugin);
 		this.plugin = plugin;
 	}
