@@ -73,7 +73,7 @@ export default class PertinentQuestions extends Plugin {
 		for (let i = 0; i < files.length; i++) {
 			const fileName = files[i].name;
 
-			if (fileName.startsWith(theContactFile) ){
+			if (fileName.startsWith(theContactFile)) {
 				// if (fileName == this.settings.contactsFile) { // EQUALITY == or === does NOT work
 				found = true;
 
@@ -232,20 +232,23 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 
 				const fileExists = await this.fileExists(theFilePath);
 				if (!fileExists) {
-					let theFile: TFile = this.createFile(theFilePath, theFileMetaData);
-					if (theFile != null) {
+					// File does not exist, so create
+					let theFile  = await this.createFile(theFilePath, theFileMetaData);
+					if (theFile instanceof TFile) {
 						const theContent: string = theFileMetaData.concat("```email\n".concat(`to: ${emailAddress}\nsubject: ${theSubject}\nbody: \"${theBody}\"\n`).concat("```").concat("\n#ToSend"));
 						try {
 							await this.app.vault.append(theFile, theContent);
 						} catch (e) {
+							new Notice('Could not append');
 							console.log(`Could not append to file: ${theFilePath} due to ${e}`);
 						}
-
-					} else {
+					}
+					else {
+						new Notice('Could not create file');
 						console.log(`Error - could not create file for ${theFilePath}`);
 					}
-				} else{
-					console.log(`theFilePath ${theFilePath} does not exist`)
+				} else {
+//File exists - ignore
 				}
 			}
 		}
@@ -266,8 +269,6 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 			} else {
 				// No file or folder so create
 				const createdFile: TFile = await this.app.vault.create(theFilePath, content);
-				createdFile.basename = theFilePath;
-				console.log("Created");
 				return createdFile;
 			}
 		} catch (e) {
