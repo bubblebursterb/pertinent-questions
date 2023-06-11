@@ -1,3 +1,6 @@
 {
+  "questionsFolder": "Questions/",
+  "outputFolder": "Persistent Questions/",
+  "contactsFile": "contacts.csv",
   "mySetting": "Questions"
 }
