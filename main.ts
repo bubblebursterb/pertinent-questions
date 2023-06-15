@@ -18,8 +18,8 @@ interface PertinentQuestionsSettings {
 
 
 const DEFAULT_SETTINGS: PertinentQuestionsSettings = {
-	questionsFolder: 'Questions/',
-	outputFolder: 'Pertinent Questions/',
+	questionsFolder: 'Questions',
+	outputFolder: 'Pertinent Questions',
 	contactsFile: 'contacts.csv'
 
 }
@@ -37,7 +37,7 @@ export default class PertinentQuestions extends Plugin {
 		// Add command to launch Ask Pertinent Questions
 		this.addCommand({
 			id: 'create-pertinent-questions',
-			name: 'Create Pertinent Questions',
+			name: AppSettings.CREATE_PERTINENT_QUESTIONS, 
 			callback: async () => {
 				const categories: string[] = [];
 				this.findAllCategories().forEach(cat => {
@@ -113,7 +113,7 @@ export default class PertinentQuestions extends Plugin {
 					// Top level Questions category file
 				} else { // Category Folder
 					const categoryFolder = this.app.vault.getAbstractFileByPath(child.path)
-					console.log (`catFolder = ${categoryFolder} and childPath = ${child.path}************`);
+					console.log(`catFolder = ${categoryFolder} and childPath = ${child.path}************`);
 					if (categoryFolder instanceof TFolder) {
 						for (let innerChild of categoryFolder.children) {
 							if (innerChild instanceof TFile) {
@@ -161,6 +161,7 @@ export default class PertinentQuestions extends Plugin {
 		// 	console.log(`Questions folder not found: ${ this.settings.questionsFolder }`);
 		// }
 		// console.log(`Returning cats = ${ categories }`);
+		categories.unshift(AppSettings.ALL_CATEGORIES);
 		return categories;
 	}
 
@@ -215,18 +216,18 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 		// RESEARCH HERE https://www.programcreek.com/typescript/?api=obsidian.FuzzySuggestModal
 
 		this.createFolder(this.outputFolder);
+		if (cat != AppSettings.ALL_CATEGORIES){
+			this.categories = [cat];
+		}
 		// FOREEACH Question Category
 		for (let j = 0; j < this.categories.length; j++) {
 			console.log(`cat ${j} = ${this.categories[j]}`);
-			const theQuestion = await this.getCategoryQuestion(this.categories[j]);
-			// const interimName =  theQuestion.split("\n");
-			// const lineStart = AppSettings.EMAIL_NL.concat(AppSettings.EMAIL_SOL);
-			// for (let i = 0; i < interimName.length; i++) {
-			// 	theQuestion += lineStart.concat(questionLines[i]);
-			// }
-			if (theQuestion != null) {
+			// Get all the questions
+			let theQuestions = await this.getCategoryQuestions(this.categories[j]);
+
+			if (theQuestions != null) {
 				// need the directory separator 
-				const theFolder = this.outputFolder.concat("/").concat(this.categories[j]);
+				const theFolder = this.outputFolder.concat(AppSettings.MAC_FOLDER_SEPARATOR).concat(this.categories[j]);
 				this.createFolder(theFolder); // Create the categories
 				// FOREACH Email Contact
 				for (let i = 0; i < this.contacts.length; i++) {
@@ -237,42 +238,48 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 					// 	lastName: string;
 					// 	emailAddress: string;
 					// };
-
-					const [title, firstName, lastName, emailAddress] = this.contacts[i];
-					const theSubject = "SUBJECT GOES HERE";
-					const theFileMetaData = `---\nsent: false\ncategory: ${this.categories[j]}\n---\n\n`;
-
-
-
-
-					const theBody = `FAO ${title} ${firstName} ${lastName}${theQuestion}`;
-					// Create Pertinent Questions File using First Name and Last Name
-					const theFileName: string = theFolder.concat("/").concat(firstName + lastName + ".md");
-
-					const fileExists = await this.fileExists(theFileName);
-					if (!fileExists) {
-						// File does not exist, so create
-						console.log(`CREATING FILE *** ${theFileName}`);
-						let theFile = await this.createFile(theFileName, theFileMetaData);
-						if (theFile instanceof TFile) {
-							const theContent: string = ("```email\n".concat(`to: ${emailAddress}\nsubject: ${theSubject}\n\nbody: \"${theBody}\"\n`).concat("```").concat("\n#ToSend"));
-							try {
-								await this.app.vault.append(theFile, theContent);
-							} catch (e) {
-								new Notice('Could not append');
-								console.log(`Could not append to file: ${theFileName} due to ${e}`);
+					for (let k = 0; k < theQuestions.length; k++){
+						let theQuestion = theQuestions[k];
+						const [title, firstName, lastName, emailAddress] = this.contacts[i];
+						const theSubject = AppSettings.SUBJECT_GOES_HERE;
+						const theFileMetaData = `---\nsent: false\ncategory: ${this.categories[j]}\n---\n\n`;
+						const theQuestionFileName: string[] = theQuestion.split("\n", 2);
+						const index = theQuestion.indexOf("\n"); // First line is the filename
+						if (index != undefined) {
+							theQuestion = theQuestion.substring(index, theQuestion.length - 1);
+							const theBody = `${AppSettings.FAO} ${title} ${firstName} ${lastName}${theQuestion}`;
+							// Create Pertinent Questions File using First Name and Last Name
+							const theFileName: string = theFolder.concat("/").concat(firstName + lastName + "-" + theQuestionFileName[0] + ".md");
+	
+							const fileExists = await this.fileExists(theFileName);
+							if (!fileExists) {
+								// File does not exist, so create
+								console.log(`CREATING FILE *** ${theFileName}`);
+								let theFile = await this.createFile(theFileName, theFileMetaData);
+								if (theFile instanceof TFile) {
+									const theContent: string = ("```email\n".concat(`to: ${emailAddress}\nsubject: ${theSubject}\n\nbody: \"${theBody}\"\n`).concat("```").concat("\n#ToSend"));
+									try {
+										await this.app.vault.append(theFile, theContent);
+									} catch (e) {
+										new Notice('Could not append');
+										console.log(`Could not append to file: ${theFileName} due to ${e}`);
+									}
+								}
+								else {
+									new Notice('Could not create file');
+									console.log(`Error - could not create file for ${theFileName}`);
+								}
+							} else {
+								//File exists - ignore
 							}
 						}
-						else {
-							new Notice('Could not create file');
-							console.log(`Error - could not create file for ${theFileName}`);
-						}
-					} else {
-						//File exists - ignore
+	
 					}
+		
+
 				} //End FOREACH contact
 			} else {
-				console.log(`Couldn't read any file at ${this.questionsFolder} with ${theQuestion}`);
+				console.log(`Couldn't read any file at ${this.questionsFolder} `);
 			}
 
 		} //End FOREACH category
@@ -310,28 +317,34 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 		}
 	}
 
-	async getCategoryQuestion(category: string): Promise<string | null> {
+	async getCategoryQuestions(category: string): Promise<string [] | null> {
+
 		try {
 			// concat the / as all folders need to be devoid of / slashes to work with abstractFilePath impl I have
-			const folderOrFile = this.app.vault.getAbstractFileByPath(this.questionsFolder.concat("/".concat(category)));
+			const folderOrFile = this.app.vault.getAbstractFileByPath(this.questionsFolder.concat(AppSettings.MAC_FOLDER_SEPARATOR.concat(category)));
 
 			if (folderOrFile instanceof TFolder) {
+				const theQuestions : string[] = [];
 				for (let child of folderOrFile.children) {
 					if (child instanceof TFile) {
 						let theQuestionLines = await this.app.vault.cachedRead(child);
-						let theQuestion = child.path+"\n"; // will add to new file name
-						const questionLines = theQuestionLines.split("\n");
-						const lineStart = AppSettings.EMAIL_NL.concat(AppSettings.EMAIL_SOL);
-						for (let i = 0; i < questionLines.length; i++) {
-							theQuestion += lineStart.concat(questionLines[i]);
-						}
-						return theQuestion;
+						const index = child.path.lastIndexOf(AppSettings.MAC_FOLDER_SEPARATOR);
+						if (index != undefined) {
+							let theQuestion = child.path + "\n"; // will add to new file name
+							// Add 1 to index to go past the / and remove 4 to get rid of the .md
+							theQuestion = theQuestion.substring(index + 1, theQuestion.length - 4);
 
-						// const regex = "/\\n/gi";
-						// theQuestion = theQuestion.replace(regex, "\\n\\n ");
-						// return bodyStart.concat(theQuestion);
+							const questionLines = theQuestionLines.split("\n");
+							const lineStart = AppSettings.EMAIL_NL.concat(AppSettings.EMAIL_SOL);
+							for (let i = 0; i < questionLines.length; i++) {
+								theQuestion += lineStart.concat(questionLines[i]);
+							}
+							theQuestions.unshift(theQuestion);
+						}
+
 					}
 				}
+				return theQuestions;
 			} else {
 				console.log(`Expected folder in getCategoryQuestions param but sent ${this.questionsFolder.concat(category)}`);
 				return null;
