@@ -200,6 +200,15 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 	}
 	// Returns all available suggestions.
 	getSuggestions(query: string): string[] {
+		// function compareFunc (a,b){
+		// 	if 
+		// }
+		this.categories.sort(); // sort and ensure ALL_CATEGORIES is first selection
+		if (this.categories[0]!=AppSettings.ALL_CATEGORIES){
+			const index = this.categories.indexOf(AppSettings.ALL_CATEGORIES);
+			this.categories.splice(index,1);
+			this.categories.unshift(AppSettings.ALL_CATEGORIES);
+		}
 		return this.categories.filter((cat) =>
 			cat.toLowerCase().includes(query.toLowerCase())
 		);
@@ -225,7 +234,7 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 			// Get all the questions
 			let theQuestions = await this.getCategoryQuestions(this.categories[j]);
 
-			if (theQuestions != null) {
+			if (theQuestions != null) { // No category questions, so don't create a category folder or option
 				// need the directory separator 
 				const theFolder = this.outputFolder.concat(AppSettings.MAC_FOLDER_SEPARATOR).concat(this.categories[j]);
 				this.createFolder(theFolder); // Create the categories
@@ -332,14 +341,14 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 						if (index != undefined) {
 							let theQuestion = child.path + "\n"; // will add to new file name
 							// Add 1 to index to go past the / and remove 4 to get rid of the .md
-							theQuestion = theQuestion.substring(index + 1, theQuestion.length - 4);
+							theQuestion = theQuestion.substring(index + 1, theQuestion.length - 4); // First line of interim file is filename
 
 							const questionLines = theQuestionLines.split("\n");
 							const lineStart = AppSettings.EMAIL_NL.concat(AppSettings.EMAIL_SOL);
 							for (let i = 0; i < questionLines.length; i++) {
 								theQuestion += lineStart.concat(questionLines[i]);
 							}
-							theQuestions.unshift(theQuestion);
+							theQuestions.unshift(theQuestion); 
 						}
 
 					}
