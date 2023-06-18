@@ -1,6 +1,6 @@
 import { App, Editor, MarkdownView, Modal, SuggestModal, Notice, Plugin, PluginSettingTab, Setting, TFile, TFolder, WorkspaceLeaf, Vault } from 'obsidian';
 import { normalizePath } from "obsidian";
-import { AppSettings } from "src/AppSettings";
+import { AppSettings as Constants } from "src/Constants";
 
 // import { CSVView, VIEW_TYPE_CSV } from "./view";
 
@@ -14,7 +14,12 @@ interface PertinentQuestionsSettings {
 
 }
 
-
+type Contact = {
+	title: string;
+	firstName: string;
+	lastName: string;
+	emailAddress: string;
+};
 
 
 const DEFAULT_SETTINGS: PertinentQuestionsSettings = {
@@ -24,7 +29,83 @@ const DEFAULT_SETTINGS: PertinentQuestionsSettings = {
 
 }
 
+function uniqByObject(array: Contact[]): Contact[] {
+	const result: Contact[] = [];
+	let results = 0;
+    for (const item of array) {
+		let duplicate = false;
+		for (let i = 0; i < result.length; i++){
+			if (result[i].emailAddress == item.emailAddress){
+				duplicate = true;
+				console.log(`Duplicate contact found with email address ${item.emailAddress}`);
+				break;
+			}
+			if ((result[i].firstName == item.firstName) && (result[i].lastName == item.lastName)){
+				duplicate = true;
+				console.log(`Duplicate contact found with first and last name ${item.firstName} ${item.lastName}`);
+				break;
+			}
+		}
+		if (!duplicate){
+			result.push(item);
+		}
+    }
 
+    return result;
+}
+const validateEmail = (email: string) => {
+	try{
+		return email
+		.toLowerCase()
+		.match(
+		  /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+		);
+	}catch (e){
+		console.log(`ERROR: Problem validating Email with ${email}`);
+	}
+return false;
+  };
+
+function validContact (contact: Contact): boolean{
+	let contactIsValid = true;
+	if (contact == null || contact == undefined){
+		console.log("Invalid contact - null or undefined");
+		contactIsValid = false;
+	}else if (!validateEmail(contact.emailAddress)){
+		console.log(`Invalid contact - bad email: ${contact.emailAddress}`);
+		contactIsValid = false;
+	}else if (contact.firstName.length == 0){
+		console.log(`Invalid contact - no firstname provided`);
+		contactIsValid = false;
+	}else if (contact.lastName.length == 0){
+		console.log(`Invalid contact - no lastname provided`);
+		contactIsValid = false;
+	}
+	
+	return contactIsValid;
+}
+
+function fileExists(filePath: string, app: App): boolean {
+	const folderOrFile = app.vault.getAbstractFileByPath(filePath);
+
+	if (folderOrFile instanceof TFile) {
+		console.log(`fileExists true for ${filePath}`);
+		return true;
+	}
+	console.log(`fileExists false for ${filePath}`);
+	return false;
+
+}
+
+function folderExists(filePath: string, app: App): boolean {
+	const folderOrFile = app.vault.getAbstractFileByPath(filePath);
+
+	if (folderOrFile instanceof TFolder) {
+		return true;
+	}
+	return false;
+
+}
 
 export default class PertinentQuestions extends Plugin {
 	settings: PertinentQuestionsSettings;
@@ -37,21 +118,15 @@ export default class PertinentQuestions extends Plugin {
 		// Add command to launch Ask Pertinent Questions
 		this.addCommand({
 			id: 'create-pertinent-questions',
-			name: AppSettings.CREATE_PERTINENT_QUESTIONS, 
+			name: Constants.CREATE_PERTINENT_QUESTIONS,
 			callback: async () => {
 				const categories: string[] = [];
 				this.findAllCategories().forEach(cat => {
 					categories.unshift(cat);
 				});
 
-				const contacts: string[][] = [];
-				let allContacts = await this.getAllContacts(this.settings.contactsFile);
-				if (allContacts != null) {
-					allContacts.forEach(contact => {
-						contacts.unshift(contact);
-					});
-				}
-				// Need to iterate through each contact AND 
+				const contacts: Contact[] = await this.getAllContacts(this.settings.contactsFile);
+
 				const suggestModal = new PertinentQuestionsSuggestModal(this.app, categories, contacts, this.settings.outputFolder, this.settings.questionsFolder).open();
 			}
 		});
@@ -60,38 +135,36 @@ export default class PertinentQuestions extends Plugin {
 	}
 
 
-	async getAllContacts(theContactFile: string): Promise<string[][] | null> {
-		const files = this.app.vault.getFiles(); // Can be CSV so need to crawl all files
-		let found = false;
-		const contacts: string[][] = [];
 
-		for (let i = 0; i < files.length; i++) {
-			const fileName = files[i].name;
 
-			if (fileName.startsWith(theContactFile)) {
-				// if (fileName == this.settings.contactsFile) { // EQUALITY == or === does NOT work
-				found = true;
+	// async getAllContacts(theContactFile: string): Promise<string[][] | null> {
+		async getAllContacts(theContactFile: string): Promise<Contact[]> {
+	
+		const contacts: Contact[] = [];
 
-				const fileContents: string = await this.app.vault.cachedRead(files[i]);
+		const theFileExists =  fileExists(theContactFile, this.app);
+		if (theFileExists) {
+			const folderOrFile = this.app.vault.getAbstractFileByPath(theContactFile);
+
+			if (folderOrFile instanceof TFile) {
+				const fileContents: string = await this.app.vault.cachedRead(folderOrFile);
 				const fileLines = fileContents.split("\n");
 
 				for (let j = 0; j < fileLines.length; j++) {
-					const contactFields: string[] = fileLines[j].split(",");
-					contacts.unshift(contactFields);
+					const [title, firstName, lastName, emailAddress] = fileLines[j].split(",");
+					const contact: Contact = { title, firstName, lastName, emailAddress };
+
+					if (validContact(contact)){
+						contacts.unshift(contact);
+					}else{
+						console.log(`Invalid contact found - contact = ${contact}`);
+					}
 
 				}
-				i = files.length; //break out as found
+				return uniqByObject(contacts);
 			}
-
 		}
-		if (!found) {
-			console.log(`Didn't find a contacts file`);
-			new Notice(`Contacts file not found - expected ${this.settings.contactsFile}`);
-		} else {
-			return contacts;
-		}
-		return null;
-
+		return contacts;
 	}
 
 	findAllCategories(): string[] {
@@ -107,61 +180,37 @@ export default class PertinentQuestions extends Plugin {
 
 		const folderOrFile = this.app.vault.getAbstractFileByPath(this.settings.questionsFolder);
 		let numFolders = 0;
+
 		if (folderOrFile instanceof TFolder) {
 			for (let child of folderOrFile.children) {
 				if (child instanceof TFile) {
 					// Top level Questions category file
 				} else { // Category Folder
 					const categoryFolder = this.app.vault.getAbstractFileByPath(child.path)
-					console.log(`catFolder = ${categoryFolder} and childPath = ${child.path}************`);
 					if (categoryFolder instanceof TFolder) {
 						for (let innerChild of categoryFolder.children) {
 							if (innerChild instanceof TFile) {
 								const substring = extractSecondLevelFolder(innerChild.path);
-								console.log(`substring============${substring} from ${innerChild.path}`);
 								if (substring != null) {
+									console.log(`INFO: substring = ${substring}`);
 									if (!categories.contains(substring)) {
 										categories.unshift(substring);
 									}
 
 								} else {
 									console.log(`Couldn't extract folder substring from ${innerChild.path}`);
-								}
-							}
-						}
-					}
-				}
+								} // endif substring
+							} // endif innercHILD
+						} //endfor innerchild
+					} //endif instanceof TFolder
+				} //endif instance of TFile
 
-			}
+			}//endfor child of tfolder
 			console.log(`numFolders=${numFolders}`);
 		} else {
 			console.log(`NOT AN INSTANCE OF TFolder instead it is ${folderOrFile}`);
 		}
-
-
-
-
-		// Markdownfiles parse
-		// let found = false;
-		// for (let i = 0; i < files.length; i++) {
-
-		// 	const thePath = files[i].path;
-		// 	if (thePath.startsWith(this.settings.questionsFolder)) {
-		// 		console.log(`thePath ===== ${ thePath }`);
-		// 		const substring = extractSecondLevelFolder(thePath);
-		// 		if (substring != null) {
-		// 			categories.unshift(substring);
-		// 			found = true;
-		// 		}
-		// 	} else {
-		// 		// console.log(`Did not match - filepath=${ files[i].path }`);
-		// 	}
-		// }
-		// if (!found) {
-		// 	console.log(`Questions folder not found: ${ this.settings.questionsFolder }`);
-		// }
-		// console.log(`Returning cats = ${ categories }`);
-		categories.unshift(AppSettings.ALL_CATEGORIES);
+	
 		return categories;
 	}
 
@@ -182,15 +231,16 @@ export default class PertinentQuestions extends Plugin {
 }
 
 
+
 class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 	categories: string[];
-	contacts: string[][];
+	contacts: Contact[];
 	outputFolder: string;
 	questionsFolder: string;
 	vault: Vault;
 
 
-	constructor(app: App, categories: string[], contacts: string[][], outputFolder: string, questionsFolder: string) {
+	constructor(app: App, categories: string[], contacts: Contact[], outputFolder: string, questionsFolder: string) {
 		super(app);
 		this.vault = app.vault;
 		this.categories = categories;
@@ -200,14 +250,12 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 	}
 	// Returns all available suggestions.
 	getSuggestions(query: string): string[] {
-		// function compareFunc (a,b){
-		// 	if 
-		// }
 		this.categories.sort(); // sort and ensure ALL_CATEGORIES is first selection
-		if (this.categories[0]!=AppSettings.ALL_CATEGORIES){
-			const index = this.categories.indexOf(AppSettings.ALL_CATEGORIES);
-			this.categories.splice(index,1);
-			this.categories.unshift(AppSettings.ALL_CATEGORIES);
+		if (this.categories[0] != Constants.ALL_CATEGORIES) {
+			const index = this.categories.indexOf(Constants.ALL_CATEGORIES);
+			// debugger;
+			// this.categories.splice(index, 1);
+			this.categories.unshift(Constants.ALL_CATEGORIES);
 		}
 		return this.categories.filter((cat) =>
 			cat.toLowerCase().includes(query.toLowerCase())
@@ -222,11 +270,15 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 
 	// Perform action on the selected suggestion.
 	async onChooseSuggestion(cat: string, evt: MouseEvent | KeyboardEvent) {
-		// RESEARCH HERE https://www.programcreek.com/typescript/?api=obsidian.FuzzySuggestModal
 
 		this.createFolder(this.outputFolder);
-		if (cat != AppSettings.ALL_CATEGORIES){
+		if (cat != Constants.ALL_CATEGORIES) {
 			this.categories = [cat];
+		} else {
+
+			this.categories.shift(); // remove ALL_CATEGORIES and iterate through ALL categories
+
+	
 		}
 		// FOREEACH Question Category
 		for (let j = 0; j < this.categories.length; j++) {
@@ -236,82 +288,102 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 
 			if (theQuestions != null) { // No category questions, so don't create a category folder or option
 				// need the directory separator 
-				const theFolder = this.outputFolder.concat(AppSettings.MAC_FOLDER_SEPARATOR).concat(this.categories[j]);
+				const theFolder = this.outputFolder.concat(Constants.MAC_FOLDER_SEPARATOR).concat(this.categories[j]);
 				this.createFolder(theFolder); // Create the categories
 				// FOREACH Email Contact
-				for (let i = 0; i < this.contacts.length; i++) {
-					console.log(`contact ${i} = ${this.contacts[i]}`)
-					// type Contact {
-					// 	title: string;
-					// 	firstName: string;
-					// 	lastName: string;
-					// 	emailAddress: string;
-					// };
-					for (let k = 0; k < theQuestions.length; k++){
-						let theQuestion = theQuestions[k];
-						const [title, firstName, lastName, emailAddress] = this.contacts[i];
-						const theSubject = AppSettings.SUBJECT_GOES_HERE;
-						const theFileMetaData = `---\nsent: false\ncategory: ${this.categories[j]}\n---\n\n`;
-						const theQuestionFileName: string[] = theQuestion.split("\n", 2);
-						const index = theQuestion.indexOf("\n"); // First line is the filename
-						if (index != undefined) {
-							theQuestion = theQuestion.substring(index, theQuestion.length - 1);
-							const theBody = `${AppSettings.FAO} ${title} ${firstName} ${lastName}${theQuestion}`;
-							// Create Pertinent Questions File using First Name and Last Name
-							const theFileName: string = theFolder.concat("/").concat(firstName + lastName + "-" + theQuestionFileName[0] + ".md");
-	
-							const fileExists = await this.fileExists(theFileName);
-							if (!fileExists) {
-								// File does not exist, so create
-								console.log(`CREATING FILE *** ${theFileName}`);
-								let theFile = await this.createFile(theFileName, theFileMetaData);
-								if (theFile instanceof TFile) {
-									const theContent: string = ("```email\n".concat(`to: ${emailAddress}\nsubject: ${theSubject}\n\nbody: \"${theBody}\"\n`).concat("```").concat("\n#ToSend"));
-									try {
-										await this.app.vault.append(theFile, theContent);
-									} catch (e) {
-										new Notice('Could not append');
-										console.log(`Could not append to file: ${theFileName} due to ${e}`);
-									}
-								}
-								else {
-									new Notice('Could not create file');
-									console.log(`Error - could not create file for ${theFileName}`);
-								}
-							} else {
-								//File exists - ignore
-							}
-						}
-	
-					}
-		
 
-				} //End FOREACH contact
+				if (this.contacts.length > 0) {
+					for (let i = 0; i < this.contacts.length; i++) {
+
+						for (let k = 0; k < theQuestions.length; k++) {
+
+							let theQuestion = theQuestions[k];
+							this.writeQuestionFile(theQuestion, theFolder, this.categories[j], this.contacts.at(i));
+
+						}
+					} //End FOREACH contact
+				} else {
+					for (let k = 0; k < theQuestions.length; k++) {
+
+						let theQuestion = theQuestions[k];
+						this.writeQuestionFile(theQuestion, theFolder, this.categories[j]);
+					}
+				}
+
 			} else {
 				console.log(`Couldn't read any file at ${this.questionsFolder} `);
 			}
 
 		} //End FOREACH category
 	}
-	protected async fileExists(filePath: string): Promise<boolean> {
-		return await this.app.vault.adapter.exists(filePath);
+
+	async writeQuestionFile(theQuestion: string, theFolder: string, category: string, contact?: Contact) {
+		const theSubject = Constants.SUBJECT_GOES_HERE;
+		const theFileFrontMatter = `---\npublish: true\nsent: false\ncategory: ${category}\n---\n\n`;
+		const theQuestionFile: string[] = theQuestion.split("\n", 2);
+		const index = theQuestion.indexOf("\n"); // First line is the filename
+		if (index != undefined) {
+			theQuestion = theQuestion.substring(index, theQuestion.length - 1);
+			let theBody = "";
+			let theFileName = "";
+			if (contact) {
+				theBody = `${Constants.FAO} ${contact.title} ${contact.firstName} ${contact.lastName}${theQuestionFile[1]}`;
+				// Create Pertinent Questions File using First Name and Last Name
+				theFileName = theFolder.concat("/").concat(contact.firstName + contact.lastName + "-" + theQuestionFile[0] + ".md");
+			} else {
+				theBody = `${Constants.FAO} ${theQuestionFile[1]}`;
+				theFileName = theFolder.concat("/").concat(theQuestionFile[0] + ".md");
+			}
+
+			const theFileExists = fileExists(theFileName, this.app);
+			if (!theFileExists) {
+				// File does not exist, so create
+
+				let theFile = await this.createFile(theFileName, theFileFrontMatter);
+				if (theFile instanceof TFile) {
+					let theContent = "";
+					if (contact) {
+						theContent = ("```email\n".concat(`to: ${contact.emailAddress}\nsubject: ${theSubject}\nbody: \"${theBody}\"\n`).concat("```"));
+					} else {
+						// No contact so just generating an eample email
+						theContent = ("```email\n".concat(`to: someone@example.com\nsubject: ${theSubject}\nbody: \"${theBody}\"\n`).concat("```"));
+					}
+
+					try {
+						await this.app.vault.append(theFile, theContent);
+					} catch (e) {
+						new Notice('Could not append');
+						console.log(`Could not append to file: ${theFileName} due to ${e}`);
+					}
+				}
+				else {
+					new Notice('Could not create file');
+					console.log(`Error - could not create file for ${theFileName}`);
+				}
+			} else { // endif fileExists
+				//File exists - ignore
+			}
+		} // endif index undefined
+
 	}
 
-	async createFile(theFilePath: string, content: string): Promise<TFile | null> {
-		try {
-			const folderOrFile = this.app.vault.getAbstractFileByPath(theFilePath);
 
-			if (folderOrFile instanceof TFile) {
-				console.log(`Already created file!!!`);
-				return folderOrFile;
-			} else if (folderOrFile instanceof TFolder) {
-				console.log(`Expected to create file but folder specified: ${theFilePath}`);
-			} else {
-				// No file or folder so create
-				console.log(`Creating File ${theFilePath}`);
-				const createdFile: TFile = await this.app.vault.create(theFilePath, content);
-				return createdFile;
+
+	async createFile(theFilePath: string, content: string): Promise<TFile | null> {
+
+		try {
+
+			const theFileExists = fileExists(theFilePath, this.app);
+			if (theFileExists) {
+				console.log(`WARNING:!!!!!!!!!FOUND FILE ${theFilePath}`);
+				return null;
 			}
+
+			// No file or folder so create
+			console.log(`INFO:Creating File ${theFilePath}`);
+			const createdFile: TFile = await this.app.vault.create(theFilePath, content);
+			return createdFile;
+			// }
 		} catch (e) {
 			console.log(e);
 		}
@@ -319,36 +391,41 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 	}
 	async createFolder(theFolder: string) {
 		try {
-			await this.app.vault.createFolder(theFolder);
-			console.log("Created");
+			if (!folderExists(theFolder,this.app)){
+				await this.app.vault.createFolder(theFolder);
+				console.log("Created");
+			}
+
 		} catch (e) {
 			console.log(e);
 		}
 	}
 
-	async getCategoryQuestions(category: string): Promise<string [] | null> {
+	// getCategoryQuestions adds the file name as the first line/element in the return string
+	async getCategoryQuestions(category: string): Promise<string[] | null> {
 
 		try {
 			// concat the / as all folders need to be devoid of / slashes to work with abstractFilePath impl I have
-			const folderOrFile = this.app.vault.getAbstractFileByPath(this.questionsFolder.concat(AppSettings.MAC_FOLDER_SEPARATOR.concat(category)));
+			const folderOrFile = this.app.vault.getAbstractFileByPath(this.questionsFolder.concat(Constants.MAC_FOLDER_SEPARATOR.concat(category)));
 
 			if (folderOrFile instanceof TFolder) {
-				const theQuestions : string[] = [];
+				const theQuestions: string[] = [];
 				for (let child of folderOrFile.children) {
 					if (child instanceof TFile) {
 						let theQuestionLines = await this.app.vault.cachedRead(child);
-						const index = child.path.lastIndexOf(AppSettings.MAC_FOLDER_SEPARATOR);
+						const index = child.path.lastIndexOf(Constants.MAC_FOLDER_SEPARATOR);
 						if (index != undefined) {
+
 							let theQuestion = child.path + "\n"; // will add to new file name
 							// Add 1 to index to go past the / and remove 4 to get rid of the .md
 							theQuestion = theQuestion.substring(index + 1, theQuestion.length - 4); // First line of interim file is filename
 
 							const questionLines = theQuestionLines.split("\n");
-							const lineStart = AppSettings.EMAIL_NL.concat(AppSettings.EMAIL_SOL);
+							const lineStart = Constants.EMAIL_NL.concat(Constants.EMAIL_SOL);
 							for (let i = 0; i < questionLines.length; i++) {
 								theQuestion += lineStart.concat(questionLines[i]);
 							}
-							theQuestions.unshift(theQuestion); 
+							theQuestions.unshift(theQuestion);
 						}
 
 					}
@@ -413,10 +490,10 @@ class PertinentSettingTab extends PluginSettingTab {
 				}));
 
 		new Setting(containerEl)
-			.setName('Contacts Import File')
+			.setName(Constants.CONTACTS_IMPORT_FILE)
 			.setDesc('Enter the Contacts Import File Location')
 			.addText(text => text
-				.setPlaceholder('Enter Contacts File Location')
+				.setPlaceholder(Constants.CONTACTS_FILE_LOCATION)
 				.setValue(this.plugin.settings.contactsFile)
 				.onChange(async (value) => {
 					console.log('Contacts File Location: ' + value);

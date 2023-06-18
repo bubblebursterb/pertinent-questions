@@ -6,4 +6,7 @@ export class AppSettings{
     public static CREATE_PERTINENT_QUESTIONS = 'Create Pertinent Questions';
     public static SUBJECT_GOES_HERE = "SUBJECT GOES HERE";
     public static FAO = "FAO";
+    public static CONTACTS_FILE_LOCATION = 'Enter Contacts File Location';
+    public static CONTACTS_IMPORT_FILE = 'Contacts Import File';
+
 }
