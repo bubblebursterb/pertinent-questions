@@ -8,5 +8,7 @@ export class AppSettings{
     public static FAO = "FAO";
     public static CONTACTS_FILE_LOCATION = 'Enter Contacts File Location';
     public static CONTACTS_IMPORT_FILE = 'Contacts Import File';
+    public static IMAGE_SPECIFIER = `image:`;
+    public static VIDEO_SPECIFIER = `video:`;
 
 }
