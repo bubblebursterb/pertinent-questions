@@ -18,7 +18,7 @@ This plugin demonstrates some of the basic functionality the plugin API can do.
 - kkj
 
 
-## How to use
+## How to use (Developers)
 
 - Clone this repo.
 - `npm i` or `yarn` to install dependencies
