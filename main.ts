@@ -25,6 +25,9 @@ type QuestionInfo = {
 	body: string;
 	image: string;
 	video: string;
+	tags: string;
+	campaign: string;
+	deadline: string;
 }
 
 
@@ -110,16 +113,22 @@ function folderExists(filePath: string, app: App): boolean {
 
 }
 
-function getShareThis(image: boolean, video: boolean): string {
-	//Twitter
-	//Telegram
-	//Whatsapp
-	//Facebook
-	//Pinterest
-	//Wordpress
-	//Tiktok
-	return "";
-}
+// function getShareThis(image: boolean, video: boolean): string {
+// 	//Twitter
+// 	//Telegram
+// 	//Whatsapp
+// 	//Facebook
+// 	//Pinterest
+// 	//Wordpress
+// 	//Tiktok
+// 	if (image){
+
+// 	}
+// 	if {video}{
+
+// 	}
+// 	return "";
+// }
 
 export default class PertinentQuestions extends Plugin {
 	settings: PertinentQuestionsSettings;
@@ -319,9 +328,75 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 		} //End FOREACH category
 	}
 
+	isACampaign(campaign: string){
+		let itIs :boolean = false;
+		if (campaign == null){
+			;
+		}else if (campaign == undefined){
+			;
+		}else if (campaign.contains('true')){
+			itIs = true;
+		}
+		return itIs;
+	}
+	getTags(tags: string){
+		let theTags = "";
+		if (tags == null){
+			;
+		} else if (tags == undefined){
+			;
+		} else if (tags == ""){
+			;
+		} else{
+			try{
+				const theTagsArray = tags.split(',');
+				theTags = Constants.TAGS_SPECIFIER.concat(" [");
+				for (let i = 0; i < theTagsArray.length; i++) {
+					if (i!=0){
+						theTags = theTags.concat(",");
+					}
+					theTags = theTags.concat(theTagsArray[i]);
+				}
+				theTags = theTags.concat("]");
+			}catch (e){
+				console.error(`Uncaught exception getting tags: ${e}`);
+			}
+		}
+		return theTags;
+	}
+	getDeadline(deadline: string){
+		let theDeadline = "";
+		if (deadline == null){
+			;
+		} else if (deadline == undefined){
+			;
+		} else if (deadline == ""){
+			;
+		} else {
+			try{
+				theDeadline = Constants.DEADLINE_SPECIFIER.concat(" ").concat(deadline.replace(/\s/g, ""));
+			}catch (e){
+				console.error(`Uncaught exception in getDeadline: ${e}`);
+			}
+
+		}
+		return theDeadline;
+	}
 	async writeQuestionFile(theQuestion: QuestionInfo, theFolder: string, category: string, contact?: Contact) {
 		const theSubject = Constants.SUBJECT_GOES_HERE;
-		const theFileFrontMatter = `---\npublish: true\ntosend: true\nsent: false\ncategory: ${category}\n---\n`;
+		const aCampaign = this.isACampaign(theQuestion.campaign);
+		let deadline = this.getDeadline(theQuestion.deadline);
+		if (deadline != ""){
+			deadline = "\n".concat(deadline);
+		}
+
+		let tags = this.getTags(theQuestion.tags);
+		if (tags != ""){
+			tags = "\n".concat(tags);
+		}		
+	
+		const theFileFrontMatter =	`---\npublish: true\ntosend: true\nsent: false\ncategory: ${category}\ncampaign: ${aCampaign}${deadline}${tags}\n---\n## Instructions\n- reSearch - The content and reSearch Media\n- Send It!\n- Share It!\n- [Support Us](https://projectbubbleburst.com/Support+Us)\n\n## Send It\n`;
+		
 		const theQuestionFile: string[] = theQuestion.body.split(Constants.EMAIL_NL,2);
 		const theQuestionFileName = theQuestionFile[0];
 	
@@ -352,7 +427,39 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 					// No contact so just generating an eample email
 					theContent = ("```email\n".concat(`to: someone@example.com\nsubject: ${theSubject}\nbody: \"${theBody}\"\n`).concat("```"));
 				}
-				theContent.concat("\n\n").concat(getShareThis(false, false));
+				theContent = theContent.concat(Constants.EMAIL_NL).concat('## Share It\n');
+			//	theContent = theContent.constructTweet(tweet);
+				// See https://en.wikipedia.org/wiki/URL_encoding
+				let tweet = '[Twitter](https://twitter.com/intent/tweet?text=';
+				let tweetBody = "";
+				if (theQuestion.tags.length > 0){
+					tweetBody = tweetBody.concat(theQuestion.tags.concat(' '));
+				}
+				tweetBody = tweetBody.concat(Constants.PBB_PQ_DIR).concat(theQuestionFileName.replace(' ','+'));
+				tweet = tweet.concat(encodeURIComponent(tweetBody)).concat(')\n');
+				theContent = theContent.concat(tweet);
+		
+				let fb = '[Facebook](https://www.facebook.com/sharer.php?u=';
+				let fbBody = "";
+				if (theQuestion.tags.length > 0){
+					fbBody = fbBody.concat(theQuestion.tags.concat(' '));
+				}
+				fbBody = fbBody.concat(Constants.PBB_PQ_DIR).concat(theQuestionFileName.replace(' ','+'));
+				fb = fb.concat(encodeURIComponent(fbBody)).concat(')\n\n');
+				theContent = theContent.concat(fb);
+				
+			
+				theContent = theContent.concat('## reSearch Media\n### Image\n');
+
+				if (theQuestion.image.length > 0){
+					theContent = theContent.concat(Constants.EMAIL_NL).concat(theQuestion.image);
+				} 
+				theContent = theContent.concat('\n### Video\n');
+				if (theQuestion.video.length > 0){
+					theContent = theContent.concat(Constants.VIDEO_EMBED1).concat(theQuestion.video).concat(Constants.VIDEO_EMBED2);
+				}
+			
+
 				try {
 					await this.app.vault.append(theFile, theContent);
 				} catch (e) {
@@ -369,7 +476,12 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 
 	}
 
+	// function constructTweet(str: string): string | null {
+	// 	const regex = /\/([^\/]*)\//;
+	// 	const match = str.match(regex);
 
+	// 	return match ? match[1] : null;
+	// }
 
 	async createFile(theFilePath: string, content: string): Promise<TFile | null> {
 		try {
@@ -411,17 +523,25 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 						const index = child.path.lastIndexOf(Constants.MAC_FOLDER_SEPARATOR); // Folder path / fileName
 						if (index != undefined) {
 							let theFileFullPath = child.path + "\n"; // Add file name
-							const theQuestion: QuestionInfo = { body: "", image: "", video: "" };
+							const theQuestion: QuestionInfo = { body: "", image: "", video: "", tags: "", campaign: "", deadline: "" };
 							theQuestion.body = theFileFullPath.substring(index + 1, theFileFullPath.length - 4); // First line of interim file is filename
 
 							const questionLines = theQuestionLines.split("\n");
 							const lineStart = Constants.EMAIL_NL.concat(Constants.EMAIL_SOL);
 							for (let i = 0; i < questionLines.length; i++) {
+					
 								if (questionLines[i].contains(Constants.IMAGE_SPECIFIER)) {
-									theQuestion.image = questionLines[i];
+									theQuestion.image = questionLines[i].split(Constants.IMAGE_SPECIFIER)[1];
 								} else if (questionLines[i].contains(Constants.VIDEO_SPECIFIER)) {
-									theQuestion.video = questionLines[i];
-								} else {
+									theQuestion.video = questionLines[i].split(Constants.VIDEO_SPECIFIER)[1];
+								
+								} else if (questionLines[i].contains(Constants.TAGS_SPECIFIER)){
+									theQuestion.tags = questionLines[i].split(Constants.TAGS_SPECIFIER)[1];
+								}else if (questionLines[i].contains(Constants.CAMPAIGN_SPECIFIER)){
+									theQuestion.campaign = questionLines[i].split(Constants.CAMPAIGN_SPECIFIER)[1];
+								}else if (questionLines[i].contains(Constants.DEADLINE_SPECIFIER)){
+									theQuestion.deadline = questionLines[i].split(Constants.DEADLINE_SPECIFIER)[1];
+								}else {
 									theQuestion.body += lineStart.concat(questionLines[i]);
 								}
 
