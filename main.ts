@@ -382,6 +382,18 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 		}
 		return theDeadline;
 	}
+	formatHashtags(theQuestion: QuestionInfo): string{
+		let theTags = "";
+		if (theQuestion.tags.length > 0){
+			const tagsArray = theQuestion.tags.replace(/,/g,' ').split(' '); // Replace commas with spaces and then split
+			let tags = "";
+			for (let i = 0; i < tagsArray.length; i++){
+				tags = tags.concat('#').concat(tagsArray[i]).concat(' ');
+			}
+			theTags = theTags.concat(tags);
+		}
+		return theTags;
+	}
 	async writeQuestionFile(theQuestion: QuestionInfo, theFolder: string, category: string, contact?: Contact) {
 		const theSubject = Constants.SUBJECT_GOES_HERE;
 		const aCampaign = this.isACampaign(theQuestion.campaign);
@@ -430,27 +442,24 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 				theContent = theContent.concat(Constants.EMAIL_NL).concat('## Share It\n');
 			//	theContent = theContent.constructTweet(tweet);
 				// See https://en.wikipedia.org/wiki/URL_encoding
+
 				let tweet = '[Twitter](https://twitter.com/intent/tweet?text=';
-				let tweetBody = "";
-				if (theQuestion.tags.length > 0){
-					tweetBody = tweetBody.concat(theQuestion.tags.concat(' '));
-				}
-				tweetBody = tweetBody.concat(Constants.PBB_PQ_DIR).concat(theQuestionFileName.replace(' ','+'));
+				let tweetBody = this.formatHashtags(theQuestion);
+
+				const re = / /g;
+				tweetBody = tweetBody.concat(Constants.PBB_PQ_DIR).concat(theQuestionFileName.replace(re,'+'));
 				tweet = tweet.concat(encodeURIComponent(tweetBody)).concat(')\n');
 				theContent = theContent.concat(tweet);
 		
 				let fb = '[Facebook](https://www.facebook.com/sharer.php?u=';
-				let fbBody = "";
-				if (theQuestion.tags.length > 0){
-					fbBody = fbBody.concat(theQuestion.tags.concat(' '));
-				}
-				fbBody = fbBody.concat(Constants.PBB_PQ_DIR).concat(theQuestionFileName.replace(' ','+'));
+				let fbBody = this.formatHashtags(theQuestion);
+
+				fbBody = fbBody.concat(Constants.PBB_PQ_DIR).concat(theQuestionFileName.replace(re,'+'));
 				fb = fb.concat(encodeURIComponent(fbBody)).concat(')\n\n');
 				theContent = theContent.concat(fb);
 				
 			
 				theContent = theContent.concat('## reSearch Media\n### Image\n');
-
 				if (theQuestion.image.length > 0){
 					theContent = theContent.concat(Constants.EMAIL_NL).concat(theQuestion.image);
 				} 
@@ -471,9 +480,7 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 				new Notice('Could not create file');
 				console.error(`Error - could not create file for ${theFileName}`);
 			}
-
 		} // endif index undefined
-
 	}
 
 	// function constructTweet(str: string): string | null {
