@@ -407,7 +407,7 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 			tags = "\n".concat(tags);
 		}		
 	
-		const theFileFrontMatter =	`---\npublish: true\ntosend: true\nsent: false\ncategory: ${category}\ncampaign: ${aCampaign}${deadline}${tags}\n---\n## Instructions\n- reSearch - The content and reSearch Media\n- Send It!\n- Share It!\n- [Support Us](https://projectbubbleburst.com/Support+Us)\n\n## Send It\n`;
+		const theFileFrontMatter =	`---\npublish: true\ntosend: true\nsent: false\ncategory: ${category}\ncampaign: ${aCampaign}${deadline}${tags}\n---\n## Instructions\n- reSearch - The content and reSearch Media. Make sure you personalise your email with your own reasoned arguments and feelings.\nNote: Please see Contacts section at bottom of page for political representative information\n- Send It!\n- Share It!\n- [Support Us](https://projectbubbleburst.com/Support+Us)\n\n## Send It\nPersonalise the message below\n`;
 		
 		const theQuestionFile: string[] = theQuestion.body.split(Constants.EMAIL_NL,2);
 		const theQuestionFileName = theQuestionFile[0];
@@ -467,6 +467,8 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 				if (theQuestion.video.length > 0){
 					theContent = theContent.concat(Constants.VIDEO_EMBED1).concat(theQuestion.video).concat(Constants.VIDEO_EMBED2);
 				}
+				theContent = theContent.concat('## Contacts\n');
+				theContent = theContent.concat('### UK\nCSpreadsheet list of MPs: https://www.theyworkforyou.com/mps/?f=csv\nFind your MP: https://members.parliament.uk/members/commons\nFind a Lord: https://members.parliament.uk/members/lords');
 			
 
 				try {
