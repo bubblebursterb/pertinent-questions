@@ -289,7 +289,25 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 	// Perform action on the selected suggestion.
 	async onChooseSuggestion(cat: string, evt: MouseEvent | KeyboardEvent) {
 
-		this.createFolder(this.outputFolder);
+		this.createFolder(this.outputFolder); // Pertinent Questions folder
+		let theContent = '\n\n## Contacts\n> [!NOTE]\n>**Remember - send the questions to your friends, family, colleagues and local businesses first and foremost to avoid central censorship.**\n>\n> *To pose a pertinent question, the question must first be unapposed.*\n\nBelow is a short list of some country political representatives and WEF aligned companies. For further information, see: https://en.wikipedia.org/wiki/List_of_legislatures_by_country';
+		
+		theContent = theContent.concat('\n\n### Global\n- WEF Companies - https://www.weforum.org/partners#search [Let them know where your money will not be spent](https://projectbubbleburst.com/Actions/Action+18+-+Let+them+know+-+FTheWEF)');
+		theContent = theContent.concat('\n### Australia\n- List Senators and Members: https://www.aph.gov.au/Senators_and_Members/Parliamentarian_Search_Results?q=&mem=1&par=-1&gen=0&ps=0');
+		theContent = theContent.concat('\n### Canada\n- List of MPs: https://www.ourcommons.ca/members/en/search');
+		theContent = theContent.concat('\n### EU\n- List of MEPs: https://www.europarl.europa.eu/meps/en/full-list/all');
+		theContent = theContent.concat('\n### Finland\n- List of MPs: https://www.eduskunta.fi/EN/kansanedustajat/nykyiset_kansanedustajat/Pages/default.aspx');
+		theContent = theContent.concat('\n### Germany\n- List of MPs: https://www.bundestag.de/en/members');
+		theContent = theContent.concat('\n### Ireland\n- List of TDs and Senators: https://www.oireachtas.ie/en/members/');
+		theContent = theContent.concat('\n### Netherlands\n- List of MPs: https://www.houseofrepresentatives.nl/members_of_parliament/members_of_parliament');
+		theContent = theContent.concat('\n### New Zealand\n- List of MPs: https://www.parliament.nz/en/mps-and-electorates/members-of-parliament/');
+		theContent = theContent.concat('\n### Norway\n- List of MPs: https://www.stortinget.no/en/In-English/Members-of-the-Storting/current-members-of-parliament/');
+		theContent = theContent.concat('\n### Sweden\n- List of MPs: https://www.riksdagen.se/en/Members-and-parties/');
+		theContent = theContent.concat('\n### Switzerland\n- List of MPs: https://www.parlament.ch/en/organe/national-council/members-national-council-a-z');
+		theContent = theContent.concat('\n### UK\n- Spreadsheet list of MPs: https://www.theyworkforyou.com/mps/?f=csv\n- Find your MP: https://members.parliament.uk/members/commons\n- Find a Lord: https://members.parliament.uk/members/lords');
+		theContent = theContent.concat('\n### US\n- List of Senators: https://www.senate.gov/senators/');
+		
+		this.createFile(this.outputFolder.concat("/Pertinent Contacts.md"),theContent);
 		if (cat != Constants.ALL_CATEGORIES) {
 			this.categories = [cat];
 		} else {
@@ -407,7 +425,7 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 			tags = "\n".concat(tags);
 		}		
 	
-		const theFileFrontMatter =	`---\npublish: true\ntosend: true\nsent: false\ncategory: ${category}\ncampaign: ${aCampaign}${deadline}${tags}\n---\n## Instructions\n- reSearch - The content and reSearch Media. Make sure you personalise your email with your own reasoned arguments and feelings.\nNote: Please see Contacts section at bottom of page for political representative information\n- Send It!\n- Share It!\n- [Support Us](https://projectbubbleburst.com/Support+Us)\n\n## Send It\nPersonalise the message below\n`;
+		const theFileFrontMatter =	`---\npublish: true\ntosend: true\nsent: false\ncategory: ${category}\ncampaign: ${aCampaign}${deadline}${tags}\n---\n## Instructions\n[FAQ and Help](https://projectbubbleburst.com/Pertinent+Questions+Help)\n\n- reSearch - The content and reSearch Media. Make sure you personalise your email with your own reasoned arguments and feelings.\n- Send It!\n- Share It!\n- [Support Us](https://projectbubbleburst.com/Support+Us)\n\n## Send It\nPersonalise the message below\n`;
 		
 		const theQuestionFile: string[] = theQuestion.body.split(Constants.EMAIL_NL,2);
 		const theQuestionFileName = theQuestionFile[0];
@@ -439,7 +457,7 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 					// No contact so just generating an eample email
 					theContent = ("```email\n".concat(`to: someone@example.com\nsubject: ${theSubject}\nbody: \"${theBody}\"\n`).concat("```"));
 				}
-				theContent = theContent.concat(Constants.EMAIL_NL).concat('## Share It\n');
+				theContent = theContent.concat(Constants.EMAIL_NL).concat('\n> [!NOTE] Note\n>Please see [[Pertinent Contacts|Contacts]] for political representatives and other ideas for who to send information\n## Share It\n');
 			//	theContent = theContent.constructTweet(tweet);
 				// See https://en.wikipedia.org/wiki/URL_encoding
 
@@ -467,10 +485,11 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 				if (theQuestion.video.length > 0){
 					theContent = theContent.concat(Constants.VIDEO_EMBED1).concat(theQuestion.video).concat(Constants.VIDEO_EMBED2);
 				}
-				theContent = theContent.concat('## Contacts\n');
-				theContent = theContent.concat('### UK\nCSpreadsheet list of MPs: https://www.theyworkforyou.com/mps/?f=csv\nFind your MP: https://members.parliament.uk/members/commons\nFind a Lord: https://members.parliament.uk/members/lords');
-			
 
+
+			
+			
+				
 				try {
 					await this.app.vault.append(theFile, theContent);
 				} catch (e) {
