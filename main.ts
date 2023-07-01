@@ -307,7 +307,7 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 		theContent = theContent.concat('\n### UK\n- Spreadsheet list of MPs: https://www.theyworkforyou.com/mps/?f=csv\n- Find your MP: https://members.parliament.uk/members/commons\n- Find a Lord: https://members.parliament.uk/members/lords');
 		theContent = theContent.concat('\n### US\n- List of Senators: https://www.senate.gov/senators/');
 		
-		this.createFile(this.outputFolder.concat("/Pertinent Contacts.md"),theContent);
+		this.createFile("/Pertinent Contacts.md",theContent);
 		if (cat != Constants.ALL_CATEGORIES) {
 			this.categories = [cat];
 		} else {
@@ -451,6 +451,12 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 
 			if (theFile instanceof TFile) {
 				let theContent = "";
+				let re = /"/g;
+				theBody = theBody.replace(re,"%22") // Escape double quote chars
+				re = /`/g;
+				theBody = theBody.replace(re,"%60") // Escape double quote
+				re = /---(\n|.)*?---/g;
+				theBody = theBody.replace(re,"") // Remove any front matter kept in erro
 				if (contact) {
 					theContent = ("```email\n".concat(`to: ${contact.emailAddress}\nsubject: ${theSubject}\nbody: \"${theBody}\"\n`).concat("```"));
 				} else {
@@ -464,7 +470,7 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 				let tweet = '[Twitter](https://twitter.com/intent/tweet?text=';
 				let tweetBody = this.formatHashtags(theQuestion);
 
-				const re = / /g;
+				re = / /g;
 				tweetBody = tweetBody.concat(Constants.PBB_PQ_DIR).concat(theQuestionFileName.replace(re,'+'));
 				tweet = tweet.concat(encodeURIComponent(tweetBody)).concat(')\n');
 				theContent = theContent.concat(tweet);
@@ -547,6 +553,7 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 				const theQuestions: QuestionInfo[] = [];
 				for (let child of folderOrFile.children) {
 					if (child instanceof TFile) {
+						if (child.extension.endsWith("md")){
 						let theQuestionLines = await this.app.vault.cachedRead(child);
 						const index = child.path.lastIndexOf(Constants.MAC_FOLDER_SEPARATOR); // Folder path / fileName
 						if (index != undefined) {
@@ -576,7 +583,7 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 							} // endfor
 							theQuestions.unshift(theQuestion);
 						} // endif index 
-
+					}// endif md
 					}// endif child
 				} //endfor child
 	
