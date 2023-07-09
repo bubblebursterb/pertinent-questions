@@ -26,5 +26,6 @@ export class AppSettings{
     public static RESEARCH_MEDIA_HEADING = `## reSearch Media\n### Image\n`;
     public static TWEET = `[Twitter](https://twitter.com/intent/tweet?text=`;
     public static FACEBOOK_POST = `[Facebook](https://www.facebook.com/sharer.php?u=`;
-    public static NUM_QUESTIONS = `Total Number of Pertinent Questions = `
+    public static NUM_QUESTIONS = `Number of Individual Pertinent Questions = `;
+    public static TOTAL_NUM_QUESTIONS = `Total Number of Pertinent Questions = `;
 }

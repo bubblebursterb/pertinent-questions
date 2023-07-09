@@ -316,7 +316,8 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 			this.categories.shift(); // remove ALL_CATEGORIES and iterate through ALL categories
 		}
 		// FOREEACH Question Category
-		let questionCount = 0;
+		let totalQuestionCount = 0;
+		let questionsCount = 0;
 		for (let j = 0; j < this.categories.length; j++) {
 			console.debug(`cat ${j} = ${this.categories[j]}`);
 			// Get all the questions
@@ -328,12 +329,13 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 				const theFolder = this.outputFolder.concat(Constants.MAC_FOLDER_SEPARATOR).concat(this.categories[j]);
 				this.createFolder(theFolder); // Create the categories
 				// FOREACH Email Contact
+				questionsCount = questionsCount + theQuestions.length;
 				if (this.contacts.length > 0) {
 					for (let i = 0; i < this.contacts.length; i++) {
 						for (let k = 0; k < theQuestions.length; k++) {
 							let theQuestion = theQuestions[k];
 							this.writeQuestionFile(theQuestion, theFolder, this.categories[j], this.contacts.at(i));
-							questionCount++;
+							totalQuestionCount++;
 						}
 					} //End FOREACH contact
 				} else {
@@ -341,7 +343,7 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 
 						let theQuestion = theQuestions[k];
 						this.writeQuestionFile(theQuestion, theFolder, this.categories[j]);
-						questionCount++;
+						totalQuestionCount++;
 					}
 				}
 
@@ -353,177 +355,178 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 
 		theContent = "";
 		theContent = theContent.concat(Constants.FOOTER_EMBED);
-		theContent = theContent.concat(Constants.EMAIL_NL + Constants.NUM_QUESTIONS + questionCount);
+		theContent = theContent.concat(Constants.EMAIL_NL + Constants.NUM_QUESTIONS + questionsCount);
+		theContent = theContent.concat(Constants.EMAIL_NL + Constants.TOTAL_NUM_QUESTIONS + totalQuestionCount);
 		this.createFile("/Footer.md", theContent);
 
 
-}
-
-isACampaign(campaign: string){
-	let itIs: boolean = false;
-	if (campaign == null) {
-		;
-	} else if (campaign == undefined) {
-		;
-	} else if (campaign.contains('true')) {
-		itIs = true;
 	}
-	return itIs;
-}
-getTags(tags: string){
-	let theTags = "";
-	if (tags == null) {
-		;
-	} else if (tags == undefined) {
-		;
-	} else if (tags == "") {
-		;
-	} else {
-		try {
-			const theTagsArray = tags.split(',');
-			theTags = Constants.TAGS_SPECIFIER.concat(" [");
-			for (let i = 0; i < theTagsArray.length; i++) {
-				if (i != 0) {
-					theTags = theTags.concat(",");
-				}
-				theTags = theTags.concat(theTagsArray[i]);
-			}
-			theTags = theTags.concat("]");
-		} catch (e) {
-			console.error(`Uncaught exception getting tags: ${e}`);
+
+	isACampaign(campaign: string) {
+		let itIs: boolean = false;
+		if (campaign == null) {
+			;
+		} else if (campaign == undefined) {
+			;
+		} else if (campaign.contains('true')) {
+			itIs = true;
 		}
+		return itIs;
 	}
-	return theTags;
-}
-getDeadline(deadline: string){
-	let theDeadline = "";
-	if (deadline == null) {
-		;
-	} else if (deadline == undefined) {
-		;
-	} else if (deadline == "") {
-		;
-	} else {
-		try {
-			theDeadline = Constants.DEADLINE_SPECIFIER.concat(" ").concat(deadline.replace(/\s/g, ""));
-		} catch (e) {
-			console.error(`Uncaught exception in getDeadline: ${e}`);
-		}
-
-	}
-	return theDeadline;
-}
-formatHashtags(theQuestion: QuestionInfo): string{
-	let theTags = "";
-	if (theQuestion.tags.length > 0) {
-		const tagsArray = theQuestion.tags.replace(/,/g, ' ').split(' '); // Replace commas with spaces and then split
-		let tags = "";
-		for (let i = 0; i < tagsArray.length; i++) {
-			tags = tags.concat('#').concat(tagsArray[i]).concat(' ');
-		}
-		theTags = theTags.concat(tags);
-	}
-	return theTags;
-}
-	async writeQuestionFile(theQuestion: QuestionInfo, theFolder: string, category: string, contact ?: Contact) {
-	const theSubject = Constants.SUBJECT_GOES_HERE;
-	const aCampaign = this.isACampaign(theQuestion.campaign);
-	let deadline = this.getDeadline(theQuestion.deadline);
-	if (deadline != "") {
-		deadline = "\n".concat(deadline);
-	}
-
-	let tags = this.getTags(theQuestion.tags);
-	if (tags != "") {
-		tags = "\n".concat(tags);
-	}
-
-	const theFileFrontMatter = `---\npublish: true\ntosend: true\nsent: false\ncategory: ${category}\ncampaign: ${aCampaign}${deadline}${tags}\n---\n## Instructions\n[FAQ and Help](https://projectbubbleburst.com/Pertinent+Questions+Help)\n\n- reSearch - The content and reSearch Media. Make sure you personalise your email with your own reasoned arguments and feelings.\n- Send It!\n- Share It!\n- [Support Us](https://projectbubbleburst.com/Support+Us)\n\n## Send It\nPersonalise the message below\n`;
-
-	const theQuestionFile: string[] = theQuestion.body.split(Constants.EMAIL_NL, 2);
-	const theQuestionFileName = theQuestionFile[0];
-
-
-	const indexBodyStart = theQuestion.body.indexOf(Constants.EMAIL_NL) + Constants.EMAIL_NL.length; // First line is the filename
-	const theQuestionBody = theQuestion.body.substring(indexBodyStart);
-
-	if (indexBodyStart != undefined) {
-		let theBody = "";
-		let theFileName = "";
-		if (contact) {
-			theBody = `${Constants.FAO} ${contact.title} ${contact.firstName} ${contact.lastName}` + Constants.EMAIL_NL + `${theQuestionBody}`;
-			// Create Pertinent Questions File using First Name and Last Name
-			theFileName = theFolder.concat("/").concat(contact.firstName + contact.lastName + "-" + theQuestionFileName + ".md");
+	getTags(tags: string) {
+		let theTags = "";
+		if (tags == null) {
+			;
+		} else if (tags == undefined) {
+			;
+		} else if (tags == "") {
+			;
 		} else {
-			theBody = `${Constants.FAO}` + Constants.EMAIL_NL + `${theQuestionBody}`;
-			theFileName = theFolder.concat("/").concat(theQuestionFileName) + ".md";
-		}
-		// File does not exist, so create
-		let theFile = await this.createFile(theFileName, theFileFrontMatter);
-
-
-		if (theFile instanceof TFile) {
-			let theContent = "";
-			let re = /"/g;
-			theBody = theBody.replace(re, "%22") // Escape double quote chars
-			re = /`/g;
-			theBody = theBody.replace(re, "%60") // Escape double quote
-			re = /---(\n|.)*?---/g;
-			theBody = theBody.replace(re, "") // Remove any front matter kept in erro
-			if (contact) {
-				theContent = ("```email\n".concat(`to: ${contact.emailAddress}\nsubject: ${theSubject}\nbody: \"${theBody}\"\n`).concat("```"));
-			} else {
-				// No contact so just generating an eample email
-				theContent = ("```email\n".concat(`to: someone@example.com\nsubject: ${theSubject}\nbody: \"${theBody}\"\n`).concat("```"));
-			}
-			theContent = theContent.concat(Constants.EMAIL_NL).concat('\n> [!NOTE] Note\n>Please see [[Pertinent Contacts|Contacts]] for political representatives and other ideas for who to send information\n## Share It\n');
-			//	theContent = theContent.constructTweet(tweet);
-			// See https://en.wikipedia.org/wiki/URL_encoding
-
-			let tweet = Constants.TWEET;
-			let tweetBody = this.formatHashtags(theQuestion);
-
-			re = / /g;
-			tweetBody = tweetBody.concat(Constants.PBB_PQ_DIR).concat(theQuestionFileName.replace(re, '+'));
-			tweet = tweet.concat(encodeURIComponent(tweetBody)).concat(')\n');
-			theContent = theContent.concat(tweet);
-
-			let fb = Constants.FACEBOOK_POST;
-			let fbBody = this.formatHashtags(theQuestion);
-
-			fbBody = fbBody.concat(Constants.PBB_PQ_DIR).concat(theQuestionFileName.replace(re, '+'));
-			fb = fb.concat(encodeURIComponent(fbBody)).concat(')\n\n');
-			theContent = theContent.concat(fb);
-
-
-			theContent = theContent.concat(Constants.RESEARCH_MEDIA_HEADING);
-			if (theQuestion.image.length > 0) {
-				theContent = theContent.concat(Constants.EMAIL_NL).concat(theQuestion.image);
-			}
-			theContent = theContent.concat(Constants.VIDEO_HEADING);
-			if (theQuestion.video.length > 0) {
-				// theContent = theContent.concat(Constants.VIDEO_EMBED1).concat(theQuestion.video).concat(Constants.VIDEO_EMBED2);
-				theContent = theContent.concat(theQuestion.video);
-			}
-			theContent = theContent.concat(Constants.EMAIL_NL).concat(Constants.FOOTER_SPECIFIER);
-
-
-
-
-
 			try {
-				await this.app.vault.append(theFile, theContent);
+				const theTagsArray = tags.split(',');
+				theTags = Constants.TAGS_SPECIFIER.concat(" [");
+				for (let i = 0; i < theTagsArray.length; i++) {
+					if (i != 0) {
+						theTags = theTags.concat(",");
+					}
+					theTags = theTags.concat(theTagsArray[i]);
+				}
+				theTags = theTags.concat("]");
 			} catch (e) {
-				new Notice('Could not append');
-				console.error(`Could not append to file: ${theFileName} due to ${e}`);
+				console.error(`Uncaught exception getting tags: ${e}`);
 			}
 		}
-		else {
-			new Notice('Could not create file');
-			console.error(`Error - could not create file for ${theFileName}`);
+		return theTags;
+	}
+	getDeadline(deadline: string) {
+		let theDeadline = "";
+		if (deadline == null) {
+			;
+		} else if (deadline == undefined) {
+			;
+		} else if (deadline == "") {
+			;
+		} else {
+			try {
+				theDeadline = Constants.DEADLINE_SPECIFIER.concat(" ").concat(deadline.replace(/\s/g, ""));
+			} catch (e) {
+				console.error(`Uncaught exception in getDeadline: ${e}`);
+			}
+
 		}
-	} // endif index undefined
-}
+		return theDeadline;
+	}
+	formatHashtags(theQuestion: QuestionInfo): string {
+		let theTags = "";
+		if (theQuestion.tags.length > 0) {
+			const tagsArray = theQuestion.tags.replace(/,/g, ' ').split(' '); // Replace commas with spaces and then split
+			let tags = "";
+			for (let i = 0; i < tagsArray.length; i++) {
+				tags = tags.concat('#').concat(tagsArray[i]).concat(' ');
+			}
+			theTags = theTags.concat(tags);
+		}
+		return theTags;
+	}
+	async writeQuestionFile(theQuestion: QuestionInfo, theFolder: string, category: string, contact?: Contact) {
+		const theSubject = Constants.SUBJECT_GOES_HERE;
+		const aCampaign = this.isACampaign(theQuestion.campaign);
+		let deadline = this.getDeadline(theQuestion.deadline);
+		if (deadline != "") {
+			deadline = "\n".concat(deadline);
+		}
+
+		let tags = this.getTags(theQuestion.tags);
+		if (tags != "") {
+			tags = "\n".concat(tags);
+		}
+
+		const theFileFrontMatter = `---\npublish: true\nsent: false\ncategory: ${category}\ncampaign: ${aCampaign}${deadline}${tags}\n---\n## Instructions\n[FAQ and Help](https://projectbubbleburst.com/Pertinent+Questions+Help)\n\n- reSearch - The content and reSearch Media. Make sure you personalise your email with your own reasoned arguments and feelings.\n- Send It!\n- Share It!\n- [Support Us](https://projectbubbleburst.com/Support+Us)\n\n## Send It\nPersonalise the message below\n`;
+
+		const theQuestionFile: string[] = theQuestion.body.split(Constants.EMAIL_NL, 2);
+		const theQuestionFileName = theQuestionFile[0];
+
+
+		const indexBodyStart = theQuestion.body.indexOf(Constants.EMAIL_NL) + Constants.EMAIL_NL.length; // First line is the filename
+		const theQuestionBody = theQuestion.body.substring(indexBodyStart);
+
+		if (indexBodyStart != undefined) {
+			let theBody = "";
+			let theFileName = "";
+			if (contact) {
+				theBody = `${Constants.FAO} ${contact.title} ${contact.firstName} ${contact.lastName}` + Constants.EMAIL_NL + `${theQuestionBody}`;
+				// Create Pertinent Questions File using First Name and Last Name
+				theFileName = theFolder.concat("/").concat(contact.firstName + contact.lastName + "-" + theQuestionFileName + ".md");
+			} else {
+				theBody = `${Constants.FAO}` + Constants.EMAIL_NL + `${theQuestionBody}`;
+				theFileName = theFolder.concat("/").concat(theQuestionFileName) + ".md";
+			}
+			// File does not exist, so create
+			let theFile = await this.createFile(theFileName, theFileFrontMatter);
+
+
+			if (theFile instanceof TFile) {
+				let theContent = "";
+				let re = /"/g;
+				theBody = theBody.replace(re, "%22") // Escape double quote chars
+				re = /`/g;
+				theBody = theBody.replace(re, "%60") // Escape double quote
+				re = /---(\n|.)*?---/g;
+				theBody = theBody.replace(re, "") // Remove any front matter kept in erro
+				if (contact) {
+					theContent = ("```email\n".concat(`to: ${contact.emailAddress}\nsubject: ${theSubject}\nbody: \"${theBody}\"\n`).concat("```"));
+				} else {
+					// No contact so just generating an eample email
+					theContent = ("```email\n".concat(`to: someone@example.com\nsubject: ${theSubject}\nbody: \"${theBody}\"\n`).concat("```"));
+				}
+				theContent = theContent.concat(Constants.EMAIL_NL).concat('\n> [!NOTE] Note\n>Please see [[Pertinent Contacts|Contacts]] for political representatives and other ideas for who to send information\n## Share It\n');
+				//	theContent = theContent.constructTweet(tweet);
+				// See https://en.wikipedia.org/wiki/URL_encoding
+
+				let tweet = Constants.TWEET;
+				let tweetBody = this.formatHashtags(theQuestion);
+
+				re = / /g;
+				tweetBody = tweetBody.concat(Constants.PBB_PQ_DIR).concat(theQuestionFileName.replace(re, '+'));
+				tweet = tweet.concat(encodeURIComponent(tweetBody)).concat(')\n');
+				theContent = theContent.concat(tweet);
+
+				let fb = Constants.FACEBOOK_POST;
+				let fbBody = this.formatHashtags(theQuestion);
+
+				fbBody = fbBody.concat(Constants.PBB_PQ_DIR).concat(theQuestionFileName.replace(re, '+'));
+				fb = fb.concat(encodeURIComponent(fbBody)).concat(')\n\n');
+				theContent = theContent.concat(fb);
+
+
+				theContent = theContent.concat(Constants.RESEARCH_MEDIA_HEADING);
+				if (theQuestion.image.length > 0) {
+					theContent = theContent.concat(Constants.EMAIL_NL).concat(theQuestion.image);
+				}
+				theContent = theContent.concat(Constants.VIDEO_HEADING);
+				if (theQuestion.video.length > 0) {
+					// theContent = theContent.concat(Constants.VIDEO_EMBED1).concat(theQuestion.video).concat(Constants.VIDEO_EMBED2);
+					theContent = theContent.concat(theQuestion.video);
+				}
+				theContent = theContent.concat(Constants.EMAIL_NL).concat(Constants.FOOTER_SPECIFIER);
+
+
+
+
+
+				try {
+					await this.app.vault.append(theFile, theContent);
+				} catch (e) {
+					new Notice('Could not append');
+					console.error(`Could not append to file: ${theFileName} due to ${e}`);
+				}
+			}
+			else {
+				new Notice('Could not create file');
+				console.error(`Error - could not create file for ${theFileName}`);
+			}
+		} // endif index undefined
+	}
 
 	// function constructTweet(str: string): string | null {
 	// 	const regex = /\/([^\/]*)\//;
@@ -532,96 +535,96 @@ formatHashtags(theQuestion: QuestionInfo): string{
 	// 	return match ? match[1] : null;
 	// }
 
-	async createFile(theFilePath: string, content: string): Promise < TFile | null > {
-	try {
-		if(!fileExists(theFilePath, this.app)) {
-	let createdFile = await this.app.vault.create(theFilePath, content)
-	console.debug(`DEBUG:Created File ${theFilePath}`);
-	return createdFile;
-}
+	async createFile(theFilePath: string, content: string): Promise<TFile | null> {
+		try {
+			if (!fileExists(theFilePath, this.app)) {
+				let createdFile = await this.app.vault.create(theFilePath, content)
+				console.debug(`DEBUG:Created File ${theFilePath}`);
+				return createdFile;
+			}
 
 		} catch (e) {
-	console.error(`createFile: filePath: $theFilePath, error: ${e}`);
-}
-return null;
+			console.error(`createFile: filePath: $theFilePath, error: ${e}`);
+		}
+		return null;
 	}
 	async createFolder(theFolder: string) {
-	try {
-		if (!folderExists(theFolder, this.app)) {
-			await this.app.vault.createFolder(theFolder);
+		try {
+			if (!folderExists(theFolder, this.app)) {
+				await this.app.vault.createFolder(theFolder);
 
+			}
+
+		} catch (e) {
+			console.error(e);
 		}
-
-	} catch (e) {
-		console.error(e);
 	}
-}
 
 	// getCategoryQuestions adds the file name as the first line/element in the return string
-	async getCategoryQuestions(category: string): Promise < QuestionInfo[] | null > {
+	async getCategoryQuestions(category: string): Promise<QuestionInfo[] | null> {
 
-	try {
-		// concat the / as all folders need to be devoid of / slashes to work with abstractFilePath impl I have
-		const folderOrFile = this.app.vault.getAbstractFileByPath(this.questionsFolder.concat(Constants.MAC_FOLDER_SEPARATOR.concat(category)));
+		try {
+			// concat the / as all folders need to be devoid of / slashes to work with abstractFilePath impl I have
+			const folderOrFile = this.app.vault.getAbstractFileByPath(this.questionsFolder.concat(Constants.MAC_FOLDER_SEPARATOR.concat(category)));
 
-		if(folderOrFile instanceof TFolder) {
-	const theQuestions: QuestionInfo[] = [];
-	for (let child of folderOrFile.children) {
-		if (child instanceof TFile) {
-			if (child.extension.endsWith("md")) {
-				let theQuestionLines = await this.app.vault.cachedRead(child);
-				const index = child.path.lastIndexOf(Constants.MAC_FOLDER_SEPARATOR); // Folder path / fileName
-				if (index != undefined) {
-					let theFileFullPath = child.path + "\n"; // Add file name
-					const theQuestion: QuestionInfo = { body: "", image: "", video: "", tags: "", campaign: "", deadline: "" };
-					theQuestion.body = theFileFullPath.substring(index + 1, theFileFullPath.length - 4); // First line of interim file is filename
+			if (folderOrFile instanceof TFolder) {
+				const theQuestions: QuestionInfo[] = [];
+				for (let child of folderOrFile.children) {
+					if (child instanceof TFile) {
+						if (child.extension.endsWith("md")) {
+							let theQuestionLines = await this.app.vault.cachedRead(child);
+							const index = child.path.lastIndexOf(Constants.MAC_FOLDER_SEPARATOR); // Folder path / fileName
+							if (index != undefined) {
+								let theFileFullPath = child.path + "\n"; // Add file name
+								const theQuestion: QuestionInfo = { body: "", image: "", video: "", tags: "", campaign: "", deadline: "" };
+								theQuestion.body = theFileFullPath.substring(index + 1, theFileFullPath.length - 4); // First line of interim file is filename
 
-					const questionLines = theQuestionLines.split("\n");
-					const lineStart = Constants.EMAIL_NL.concat(Constants.EMAIL_SOL);
-					for (let i = 0; i < questionLines.length; i++) {
+								const questionLines = theQuestionLines.split("\n");
+								const lineStart = Constants.EMAIL_NL.concat(Constants.EMAIL_SOL);
+								for (let i = 0; i < questionLines.length; i++) {
 
-						if (questionLines[i].contains(Constants.IMAGE_SPECIFIER)) {
-							theQuestion.image = questionLines[i].split(Constants.IMAGE_SPECIFIER)[1];
-						} else if (questionLines[i].contains(Constants.VIDEO_SPECIFIER)) {
-							theQuestion.video = questionLines[i].split(Constants.VIDEO_SPECIFIER)[1];
+									if (questionLines[i].contains(Constants.IMAGE_SPECIFIER)) {
+										theQuestion.image = questionLines[i].split(Constants.IMAGE_SPECIFIER)[1];
+									} else if (questionLines[i].contains(Constants.VIDEO_SPECIFIER)) {
+										theQuestion.video = questionLines[i].split(Constants.VIDEO_SPECIFIER)[1];
 
-						} else if (questionLines[i].contains(Constants.TAGS_SPECIFIER)) {
-							theQuestion.tags = questionLines[i].split(Constants.TAGS_SPECIFIER)[1];
-						} else if (questionLines[i].contains(Constants.CAMPAIGN_SPECIFIER)) {
-							theQuestion.campaign = questionLines[i].split(Constants.CAMPAIGN_SPECIFIER)[1];
-						} else if (questionLines[i].contains(Constants.DEADLINE_SPECIFIER)) {
-							theQuestion.deadline = questionLines[i].split(Constants.DEADLINE_SPECIFIER)[1];
-						} else if (questionLines[i].contains(Constants.FOOTER_SPECIFIER)) {
-							; // Filter it out, it will be added to the PQ page
-						} else {
-							theQuestion.body += lineStart.concat(questionLines[i]);
-						}
+									} else if (questionLines[i].contains(Constants.TAGS_SPECIFIER)) {
+										theQuestion.tags = questionLines[i].split(Constants.TAGS_SPECIFIER)[1];
+									} else if (questionLines[i].contains(Constants.CAMPAIGN_SPECIFIER)) {
+										theQuestion.campaign = questionLines[i].split(Constants.CAMPAIGN_SPECIFIER)[1];
+									} else if (questionLines[i].contains(Constants.DEADLINE_SPECIFIER)) {
+										theQuestion.deadline = questionLines[i].split(Constants.DEADLINE_SPECIFIER)[1];
+									} else if (questionLines[i].contains(Constants.FOOTER_SPECIFIER)) {
+										; // Filter it out, it will be added to the PQ page
+									} else {
+										theQuestion.body += lineStart.concat(questionLines[i]);
+									}
 
-					} // endfor
-					theQuestions.unshift(theQuestion);
-				} // endif index 
-			}// endif md
-		}// endif child
-	} //endfor child
+								} // endfor
+								theQuestions.unshift(theQuestion);
+							} // endif index 
+						}// endif md
+					}// endif child
+				} //endfor child
 
-	return theQuestions;
-} else {
-	console.warn(`Expected folder in getCategoryQuestions param but sent ${this.questionsFolder.concat(category)}`);
-	return null;
-}
+				return theQuestions;
+			} else {
+				console.warn(`Expected folder in getCategoryQuestions param but sent ${this.questionsFolder.concat(category)}`);
+				return null;
+			}
 		} catch (e) {
-	console.error(e);
-}
-return null;
+			console.error(e);
+		}
+		return null;
 
 
 
 	}
 
-onClose() {
-	const { contentEl } = this;
-	contentEl.empty();
-}
+	onClose() {
+		const { contentEl } = this;
+		contentEl.empty();
+	}
 }
 
 class PertinentSettingTab extends PluginSettingTab {
