@@ -517,12 +517,10 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 				try {
 					await this.app.vault.append(theFile, theContent);
 				} catch (e) {
-					new Notice('Could not append');
 					console.error(`Could not append to file: ${theFileName} due to ${e}`);
 				}
 			}
 			else {
-				new Notice('Could not create file');
 				console.error(`Error - could not create file for ${theFileName}`);
 			}
 		} // endif index undefined
