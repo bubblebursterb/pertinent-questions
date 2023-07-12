@@ -358,6 +358,7 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 		theContent = theContent.concat(Constants.EMAIL_NL + Constants.NUM_QUESTIONS + questionsCount);
 		theContent = theContent.concat(Constants.EMAIL_NL + Constants.TOTAL_NUM_QUESTIONS + totalQuestionCount);
 		this.createFile("/Footer.md", theContent);
+		new Notice(`${cat} questions created/updated`);
 
 
 	}
