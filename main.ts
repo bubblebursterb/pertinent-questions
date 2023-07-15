@@ -28,6 +28,8 @@ type QuestionInfo = {
 	tags: string;
 	campaign: string;
 	deadline: string;
+	qshort: string;
+	alias: string;
 }
 
 
@@ -317,19 +319,23 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 		}
 		// FOREEACH Question Category
 		let totalQuestionCount = 0;
-		let questionsCount = 0;
+		
+		theContent = "";
+		let allQuestionsCount = 0;
 		for (let j = 0; j < this.categories.length; j++) {
+			let catQuestionsCount = 0;
 			console.debug(`cat ${j} = ${this.categories[j]}`);
 			// Get all the questions
 			let theQuestions = await this.getCategoryQuestions(this.categories[j]);
 
 
+			const theFolder = this.outputFolder.concat(Constants.MAC_FOLDER_SEPARATOR).concat(this.categories[j]);
 			if (theQuestions != null) { // No category questions, so don't create a category folder or option
 				// need the directory separator 
-				const theFolder = this.outputFolder.concat(Constants.MAC_FOLDER_SEPARATOR).concat(this.categories[j]);
 				this.createFolder(theFolder); // Create the categories
 				// FOREACH Email Contact
-				questionsCount = questionsCount + theQuestions.length;
+				allQuestionsCount = allQuestionsCount + theQuestions.length;
+				catQuestionsCount = theQuestions.length;
 				if (this.contacts.length > 0) {
 					for (let i = 0; i < this.contacts.length; i++) {
 						for (let k = 0; k < theQuestions.length; k++) {
@@ -350,12 +356,28 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 			} else {
 				console.warn(`Couldn't read any file at ${this.questionsFolder} `);
 			}
+	
+				// Write index files
+				const cat = this.categories[j];
+				const theFileName = theFolder.concat("/").concat(cat + Constants.CAT_INDEX_SUFFIX);
+				theContent = `---\npublish: true\nsent: false\ncategory: ${cat}\n---\n## Instructions\n- [FAQ and Help](https://projectbubbleburst.com/Pertinent+Questions+Help)\n\n- [Support Us](https://projectbubbleburst.com/Support+Us)\n\n## ${cat} Pertinent Questions\n`;
+				for (let q = 0; q < catQuestionsCount; q++) {
+					const qPlus = q+1;
+					theContent = theContent.concat("- " + Constants.PBB_ROOT.concat(cat) + `-${qPlus}\n`)
+				}
+				theContent = theContent.concat(Constants.FOOTER_EMBED);
+				theContent = theContent.concat(Constants.EMAIL_NL + Constants.NUM_QUESTIONS + catQuestionsCount);
+				// debugger;
+				this.createFile(theFileName, theContent);
+
 
 		} //End FOREACH category
 
+
+
 		theContent = "";
 		theContent = theContent.concat(Constants.FOOTER_EMBED);
-		theContent = theContent.concat(Constants.EMAIL_NL + Constants.NUM_QUESTIONS + questionsCount);
+		theContent = theContent.concat(Constants.EMAIL_NL + Constants.NUM_QUESTIONS + allQuestionsCount);
 		theContent = theContent.concat(Constants.EMAIL_NL + Constants.TOTAL_NUM_QUESTIONS + totalQuestionCount);
 		this.createFile("/Footer.md", theContent);
 		new Notice(`${cat} questions created/updated`);
@@ -442,7 +464,7 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 			tags = "\n".concat(tags);
 		}
 
-		const theFileFrontMatter = `---\npublish: true\nsent: false\ncategory: ${category}\ncampaign: ${aCampaign}${deadline}${tags}\n---\n## Instructions\n[FAQ and Help](https://projectbubbleburst.com/Pertinent+Questions+Help)\n\n- reSearch - The content and reSearch Media. Make sure you personalise your email with your own reasoned arguments and feelings.\n- Send It!\n- Share It!\n- [Support Us](https://projectbubbleburst.com/Support+Us)\n\n## Send It\nPersonalise the message below\n`;
+		const theFileFrontMatter = `---\npublish: true\nsent: false\nalias: ${theQuestion.alias}\nqshort: ${theQuestion.qshort}\ncategory: ${category}\ncampaign: ${aCampaign}${deadline}${tags}\n---\n## Instructions\n[FAQ and Help](https://projectbubbleburst.com/Pertinent+Questions+Help)\n\n- reSearch - The content and reSearch Media. Make sure you personalise your email with your own reasoned arguments and feelings.\n- Send It!\n- Share It!\n- [Support Us](https://projectbubbleburst.com/Support+Us)\n\n## Send It\nPersonalise the message below\n\n`;
 
 		const theQuestionFile: string[] = theQuestion.body.split(Constants.EMAIL_NL, 2);
 		const theQuestionFileName = theQuestionFile[0];
@@ -469,17 +491,23 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 			if (theFile instanceof TFile) {
 				let theContent = "";
 				let re = /"/g;
+				const lineStart = Constants.EMAIL_NL.concat(Constants.EMAIL_SOL);
+				theBody = theBody.concat(lineStart);
+				theBody = theBody.concat(`More About ${category}: `).concat(Constants.PBB_PQ_DIR).concat(category).concat(`/${category}-Index`);
+				
 				theBody = theBody.replace(re, "%22") // Escape double quote chars
 				re = /`/g;
 				theBody = theBody.replace(re, "%60") // Escape double quote
 				re = /---(\n|.)*?---/g;
-				theBody = theBody.replace(re, "") // Remove any front matter kept in erro
+				theBody = theBody.replace(re, "") // Remove any front matter kept in error
 				if (contact) {
-					theContent = ("```email\n".concat(`to: ${contact.emailAddress}\nsubject: ${theSubject}\nbody: \"${theBody}\"\n`).concat("```"));
+					theContent = "```email\n".concat(`to: ${contact.emailAddress}\nsubject: ${theSubject}\n`);
 				} else {
-					// No contact so just generating an eample email
-					theContent = ("```email\n".concat(`to: someone@example.com\nsubject: ${theSubject}\nbody: \"${theBody}\"\n`).concat("```"));
+					// No contact so just generating an example email
+					theContent = "```email\n".concat(`to: someone@example.com\nsubject: ${theSubject}\n`);
 				}
+				
+				theContent = theContent.concat(`body: \"${theBody}\"\n`).concat("```\n");
 				theContent = theContent.concat(Constants.EMAIL_NL).concat('\n> [!NOTE] Note\n>Please see [[Pertinent Contacts|Contacts]] for political representatives and other ideas for who to send information\n## Share It\n');
 				//	theContent = theContent.constructTweet(tweet);
 				// See https://en.wikipedia.org/wiki/URL_encoding
@@ -510,6 +538,7 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 					theContent = theContent.concat(theQuestion.video);
 				}
 				theContent = theContent.concat(Constants.EMAIL_NL).concat(Constants.FOOTER_SPECIFIER);
+				
 
 
 
@@ -575,7 +604,7 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 							const index = child.path.lastIndexOf(Constants.MAC_FOLDER_SEPARATOR); // Folder path / fileName
 							if (index != undefined) {
 								let theFileFullPath = child.path + "\n"; // Add file name
-								const theQuestion: QuestionInfo = { body: "", image: "", video: "", tags: "", campaign: "", deadline: "" };
+								const theQuestion: QuestionInfo = { body: "", image: "", video: "", tags: "", campaign: "", deadline: "", alias: "", qshort: "" };
 								theQuestion.body = theFileFullPath.substring(index + 1, theFileFullPath.length - 4); // First line of interim file is filename
 
 								const questionLines = theQuestionLines.split("\n");
@@ -593,6 +622,10 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 										theQuestion.campaign = questionLines[i].split(Constants.CAMPAIGN_SPECIFIER)[1];
 									} else if (questionLines[i].contains(Constants.DEADLINE_SPECIFIER)) {
 										theQuestion.deadline = questionLines[i].split(Constants.DEADLINE_SPECIFIER)[1];
+									} else if (questionLines[i].contains(Constants.ALIAS_SPECIFIER)) {
+										theQuestion.alias = questionLines[i].split(Constants.ALIAS_SPECIFIER)[1];		
+									} else if (questionLines[i].contains(Constants.QSHORT_SPECIFIER)) {
+										theQuestion.qshort = questionLines[i].split(Constants.QSHORT_SPECIFIER)[1];										
 									} else if (questionLines[i].contains(Constants.FOOTER_SPECIFIER)) {
 										; // Filter it out, it will be added to the PQ page
 									} else {
