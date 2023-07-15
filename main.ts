@@ -464,7 +464,12 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 			tags = "\n".concat(tags);
 		}
 
-		const theFileFrontMatter = `---\npublish: true\nsent: false\nalias: ${theQuestion.alias}\nqshort: ${theQuestion.qshort}\ncategory: ${category}\ncampaign: ${aCampaign}${deadline}${tags}\n---\n## Instructions\n[FAQ and Help](https://projectbubbleburst.com/Pertinent+Questions+Help)\n\n- reSearch - The content and reSearch Media. Make sure you personalise your email with your own reasoned arguments and feelings.\n- Send It!\n- Share It!\n- [Support Us](https://projectbubbleburst.com/Support+Us)\n\n## Send It\nPersonalise the message below\n\n`;
+		let theFileFrontMatter = "";
+		if (aCampaign){
+			theFileFrontMatter = `---\npublish: true\nsent: false\nalias: ${theQuestion.alias}\ncategory: ${category}\ncampaign: ${aCampaign}${deadline}${tags}\n---\n## Instructions\n[FAQ and Help](https://projectbubbleburst.com/Pertinent+Questions+Help)\n\n- reSearch - The content and reSearch Media. Make sure you personalise your email with your own reasoned arguments and feelings.\n- Send It!\n- Share It!\n- [Support Us](https://projectbubbleburst.com/Support+Us)\n\n## Send It\nPersonalise the message below\n\n`;
+		}else{
+			theFileFrontMatter = `---\npublish: true\nsent: false\nalias: ${theQuestion.alias}\ncategory: ${category}${tags}\n---\n## Instructions\n[FAQ and Help](https://projectbubbleburst.com/Pertinent+Questions+Help)\n\n- reSearch - The content and reSearch Media. Make sure you personalise your email with your own reasoned arguments and feelings.\n- Send It!\n- Share It!\n- [Support Us](https://projectbubbleburst.com/Support+Us)\n\n## Send It\nPersonalise the message below\n\n`;
+		}
 
 		const theQuestionFile: string[] = theQuestion.body.split(Constants.EMAIL_NL, 2);
 		let theQuestionFileName = "";
