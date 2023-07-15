@@ -467,7 +467,13 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 		const theFileFrontMatter = `---\npublish: true\nsent: false\nalias: ${theQuestion.alias}\nqshort: ${theQuestion.qshort}\ncategory: ${category}\ncampaign: ${aCampaign}${deadline}${tags}\n---\n## Instructions\n[FAQ and Help](https://projectbubbleburst.com/Pertinent+Questions+Help)\n\n- reSearch - The content and reSearch Media. Make sure you personalise your email with your own reasoned arguments and feelings.\n- Send It!\n- Share It!\n- [Support Us](https://projectbubbleburst.com/Support+Us)\n\n## Send It\nPersonalise the message below\n\n`;
 
 		const theQuestionFile: string[] = theQuestion.body.split(Constants.EMAIL_NL, 2);
-		const theQuestionFileName = theQuestionFile[0];
+		let theQuestionFileName = "";
+
+		if (theQuestion.qshort != undefined && theQuestion.qshort.length > 0){
+			theQuestionFileName = theQuestion.qshort.trimStart().trimEnd();
+		}else{
+			theQuestionFileName = theQuestionFile[0];
+		}
 
 
 		const indexBodyStart = theQuestion.body.indexOf(Constants.EMAIL_NL) + Constants.EMAIL_NL.length; // First line is the filename
