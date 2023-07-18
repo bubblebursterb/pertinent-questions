@@ -266,7 +266,7 @@ where
 You can just type your question or campaign into the obsidian note/file you create and generate Pertinent Questions in the normal way. You will not have captured all the metadata with this technique so the email will be a bit spartan w.r.t. the Image and Video section for example.
 
 ### Still Simple but more functionality Question Addition
-If you wish to add questions with full metadata, all you need do is create a question in the normal fashion just described but after your question section, add the following metadata as specified in the 
+If you wish to add questions with full metadata, all you need do is create a question in the normal fashion just described but after your question section, add the following metadata as specified in the instructions section (which you should delete after you have filled in the fields below it.)
 
 YOUR QUESTION GOES HERE...
 
