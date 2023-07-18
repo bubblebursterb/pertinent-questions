@@ -256,8 +256,9 @@ There is no limit to the questions you can add to the input Questions Folder.
 As previously mentioned, you can add your own questions to your own raw Questions folder.
 
 Questions should be added to a specific category like so:
-/Questions/Category1/Question1.md
-/Questions/Category2/Question1.md
+- /Questions/Category1/Question1.md
+- /Questions/Category2/Question1.md
+
 where 
 - 'Category' is whatever category you wish to add a question to and 
 - 'Question' is the filename/question name you are adding
@@ -270,6 +271,7 @@ If you wish to add questions with full metadata, all you need do is create a que
 YOUR QUESTION GOES HERE...
 
 ---START - DELETE AFTER FILLING IN THE FIELDS ---
+
 Instructions
 - Ensure all fields filled out below and
 - Video is the full embed video iframe
@@ -277,12 +279,19 @@ Instructions
 - Campaign related information (the 'Note:' item, the campaign: and deadline: fields should be removed if this is not a campaign)
 - The ![[Footer]] item is optional - you can use the existing Footer file and/or edit it to your own tastes
 - Note: All metadata tags below must have values or some errors can occur during pertinennt question generation
+
 ---END DELETE SECTION---
 
 Note: Deadline indicative - no end date for this campaign
+
 campaign: true | false
+
 deadline: YYYY-MM-DD
+
 tags:Tranche1,Global
+
 image: ![IMAGE DESCRIPTION GOES HERE](LINK TO IMAGE GOES HERE)
+
 video: EMBED iFrame
+
 ![[Footer]]
