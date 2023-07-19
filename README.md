@@ -17,7 +17,7 @@
 
 
 ## Initial Setup 
-- Download and install Obsidian: https://obsidian.md/
+- Download and install Obsidian:  https://obsidian.md/download - it will detect your operating system and provide you the right installer. You can see it has recognised my Mac here for example
 - Download and install the Pertinent Questions Plugin: https://github.com/bubblebursterb/pertinent-questions (Note: Tthe plugin will be submitted to [The Obsidian Plugins Repository](https://obsidian.md/plugins) - so should be accessible from within the Obsidian Application itself.)
 - Download the latest tranche of Pertinent Questions (available from the ProjectBubbleBurst substack https://projectbubbleburst.substack.com/)
 
@@ -62,16 +62,20 @@ Windows | Mac
 ---|---
 CTRL , | CMD ,
 
- 
+ A quick note on the appearance of Obsidian, out of the box, it can be configured in a myriad of ways, you don't need to do anything but if you want to spruce things up, take a look at the Appearance section to maybe change the accent colour for example.
+
 CTRL , in Windows, CMD , in Mac, then click on Pertinent Questions 
-- You can specify where the Questions Folder, output folder and contacts files are expected within the vault.
+- You can specify where the Questions Folder - which will be provided as a zip file to you - , the output folder and contacts files are expected within the vault.
 > [!Note] NB1
+> In order to see the contacts.csv file in your vault, you need to launch the Obsidian Settings, go to File & Links and enable the "Detect all file extensions" option
+> 
 > The contacts.csv file has the following comma separated format:
 > Title, First name, Last name, Email Address
 > 
 > If you wish to export contacts from Gmail/Outlook to CSV files, you will need to edit the export file and remove the unwanted columns
 > 
-> If you wish to just generate the questions, either rename the contacts.csv file (so it is not found) or just delete the file from the Contacts Import File setting.
+> If you wish to just generate the questions so you can fill in an email address yourself, either rename the contacts.csv file (so it is not found) or just delete the file from the Contacts Import File setting.
+
 
 
 
@@ -244,6 +248,8 @@ Show the Projects dashboard as per previous instructions.
 - Add the hashtag #Together to the Tag section
 - Click Save
 
+## Who else to send questions to?
+The plugin has also generated a file called "Pertinent Contacts" - this has a list of websites in various countries with information on how to contact elected representatives, it also shows who are the World Economic Forum partners who you may want to let know do not deserve your patronage as a result...
 
 ## Your Own Question Tranches OR Other Campaign Tranches
 The Together movement can potentially have specific tranches created just for local groups - in terms of customised campaigns/info and directed to local councillors in particular. 
