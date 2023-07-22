@@ -4,7 +4,7 @@ export class AppSettings{
     public static MAC_FOLDER_SEPARATOR = `/`;
     public static ALL_CATEGORIES = "All Categories";
     public static CREATE_PERTINENT_QUESTIONS = 'Create Pertinent Questions';
-    public static SUBJECT_GOES_HERE = "SUBJECT GOES HERE";
+    public static SUBJECT_GOES_HERE = "SUBJECT GOES HERE!";
     public static FAO = "FAO";
     public static CONTACTS_FILE_LOCATION = 'Enter Contacts File Location';
     public static CONTACTS_IMPORT_FILE = 'Contacts Import File';
@@ -35,4 +35,6 @@ export class AppSettings{
     public static FACEBOOK_POST = `[Facebook](https://www.facebook.com/sharer.php?u=`;
     public static NUM_QUESTIONS = `Number of Category Pertinent Questions = `;
     public static TOTAL_NUM_QUESTIONS = `Total Number of Pertinent Questions = `;
+    public static WEF_COMPANIES = `'\n\n### Global\n- WEF Companies - https://www.weforum.org/partners#search [Let them know where your money will not be spent](https://projectbubbleburst.com/Actions/Action+18+-+Let+them+know+-+FTheWEF)`;
+    public static PERTINENT_CONTACTS_FILE = "/Pertinent Contacts.md";
 }

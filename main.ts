@@ -295,7 +295,7 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 		this.createFolder(this.outputFolder); // Pertinent Questions folder
 		let theContent = '\n\n## Contacts\n> [!NOTE]\n>**Remember - send the questions to your friends, family, colleagues and local businesses first and foremost to avoid central censorship.**\n>\n> *To pose a pertinent question, the question must first be unapposed.*\n\nBelow is a short list of some country political representatives and WEF aligned companies. For further information, see: https://en.wikipedia.org/wiki/List_of_legislatures_by_country';
 
-		theContent = theContent.concat('\n\n### Global\n- WEF Companies - https://www.weforum.org/partners#search [Let them know where your money will not be spent](https://projectbubbleburst.com/Actions/Action+18+-+Let+them+know+-+FTheWEF)');
+		theContent = theContent.concat(Constants.WEF_COMPANIES);
 		theContent = theContent.concat('\n### Australia\n- List Senators and Members: https://www.aph.gov.au/Senators_and_Members/Parliamentarian_Search_Results?q=&mem=1&par=-1&gen=0&ps=0');
 		theContent = theContent.concat('\n### Canada\n- List of MPs: https://www.ourcommons.ca/members/en/search');
 		theContent = theContent.concat('\n### EU\n- List of MEPs: https://www.europarl.europa.eu/meps/en/full-list/all');
@@ -310,7 +310,7 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 		theContent = theContent.concat('\n### UK\n- Spreadsheet list of MPs: https://www.theyworkforyou.com/mps/?f=csv\n- Find your MP: https://members.parliament.uk/members/commons\n- Find a Lord: https://members.parliament.uk/members/lords');
 		theContent = theContent.concat('\n### US\n- List of Senators: https://www.senate.gov/senators/');
 
-		this.createFile("/Pertinent Contacts.md", theContent);
+		this.createFile(Constants.PERTINENT_CONTACTS_FILE, theContent);
 
 
 		if (cat != Constants.ALL_CATEGORIES) {
@@ -452,7 +452,6 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 		return theTags;
 	}
 	async writeQuestionFile(theQuestion: QuestionInfo, theFolder: string, category: string, contact?: Contact) {
-		const theSubject = Constants.SUBJECT_GOES_HERE;
 		const aCampaign = this.hasAssignedValue(theQuestion.campaign);
 		const hasAnAlias = this.hasAssignedValue(theQuestion.alias);
 
@@ -525,10 +524,10 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 				re = /---(\n|.)*?---/g;
 				theBody = theBody.replace(re, "") // Remove any front matter kept in error
 				if (contact) {
-					theContent = "```email\n".concat(`to: ${contact.emailAddress}\nsubject: ${theSubject}\n`);
+					theContent = "```email\n".concat(`to: ${contact.emailAddress}\nsubject: ${Constants.SUBJECT_GOES_HERE}\n`);
 				} else {
 					// No contact so just generating an example email
-					theContent = "```email\n".concat(`to: someone@example.com\nsubject: ${theSubject}\n`);
+					theContent = "```email\n".concat(`to: someone@example.com\nsubject: ${Constants.SUBJECT_GOES_HERE}\n`);
 				}
 
 				theContent = theContent.concat(`body: \"${theBody}\"\n`).concat("```\n");
