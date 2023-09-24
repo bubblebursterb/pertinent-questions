@@ -8,7 +8,9 @@ import { AppSettings as Constants } from "src/Constants";
 
 interface PertinentQuestionsSettings {
 	questionsFolder: string;
-	outputFolder: string;
+	questionsOutputFolder: string;
+	actionsFolder: string;
+	actionsOutputFolder: string;
 	contactsFile: string;
 
 
@@ -21,12 +23,12 @@ type Contact = {
 	emailAddress: string;
 };
 
-type QuestionInfo = {
+type QorAInfo = {
 	body: string;
 	image: string;
 	video: string;
 	tags: string;
-	campaign: string;
+	action: string;
 	deadline: string;
 	qshort: string;
 	alias: string;
@@ -34,9 +36,15 @@ type QuestionInfo = {
 }
 
 
+
+
+
+
 const DEFAULT_SETTINGS: PertinentQuestionsSettings = {
 	questionsFolder: 'Questions',
-	outputFolder: 'Pertinent Questions',
+	questionsOutputFolder: 'Pertinent Questions',
+	actionsFolder: 'Actions',
+	actionsOutputFolder: 'Pertinent Actions',
 	contactsFile: 'contacts.csv'
 
 }
@@ -116,22 +124,7 @@ function folderExists(filePath: string, app: App): boolean {
 
 }
 
-// function getShareThis(image: boolean, video: boolean): string {
-// 	//Twitter
-// 	//Telegram
-// 	//Whatsapp
-// 	//Facebook
-// 	//Pinterest
-// 	//Wordpress
-// 	//Tiktok
-// 	if (image){
 
-// 	}
-// 	if {video}{
-
-// 	}
-// 	return "";
-// }
 
 export default class PertinentQuestions extends Plugin {
 	settings: PertinentQuestionsSettings;
@@ -146,14 +139,32 @@ export default class PertinentQuestions extends Plugin {
 			id: 'create-pertinent-questions',
 			name: Constants.CREATE_PERTINENT_QUESTIONS,
 			callback: async () => {
-				const categories: string[] = [];
-				this.findAllCategories().forEach(cat => {
-					categories.unshift(cat);
+				console.debug(`Adding CREATE Pertinent Questions`);
+				const questionCategories: string[] = [];
+
+				this.findAllCategoriesOrActions(true).forEach(cat => {
+					questionCategories.unshift(cat);
 				});
 
 				const contacts: Contact[] = await this.getAllContacts(this.settings.contactsFile);
 
-				const suggestModal = new PertinentQuestionsSuggestModal(this.app, categories, contacts, this.settings.outputFolder, this.settings.questionsFolder).open();
+				const suggestModal = new PertinentSuggestModal(this.app, true, questionCategories, contacts, this.settings.questionsOutputFolder, this.settings.questionsFolder).open();
+			}
+		});
+
+
+		this.addCommand({
+			id: 'create-pertinent-actions',
+			name: Constants.CREATE_PERTINENT_ACTIONS,
+			callback: async () => {
+				console.debug(`Adding CREATE Pertinent Actins`);
+				const actionCategories: string[] = [];
+				this.findAllCategoriesOrActions(false).forEach(cat => {
+					actionCategories.unshift(cat);
+				});
+
+				const contacts: Contact[] = [];
+				const suggestModal = new PertinentSuggestModal(this.app, false, actionCategories, contacts, this.settings.actionsOutputFolder, this.settings.actionsFolder).open();
 			}
 		});
 		// This adds a settings tab so the user can configure various aspects of the plugin
@@ -189,7 +200,7 @@ export default class PertinentQuestions extends Plugin {
 		return contacts;
 	}
 
-	findAllCategories(): string[] {
+	findAllCategoriesOrActions(commandQuestion: boolean): string[] {
 		//  const files = this.app.vault.getMarkdownFiles();
 		const categories: string[] = [];
 
@@ -200,8 +211,9 @@ export default class PertinentQuestions extends Plugin {
 			return match ? match[1] : null;
 		}
 
-		const folderOrFile = this.app.vault.getAbstractFileByPath(this.settings.questionsFolder);
+		const folderOrFile = commandQuestion ? this.app.vault.getAbstractFileByPath(this.settings.questionsFolder) : this.app.vault.getAbstractFileByPath(this.settings.actionsFolder);
 		let numFolders = 0;
+
 
 		if (folderOrFile instanceof TFolder) {
 			for (let child of folderOrFile.children) {
@@ -254,21 +266,23 @@ export default class PertinentQuestions extends Plugin {
 
 
 
-class PertinentQuestionsSuggestModal extends SuggestModal<string> {
+class PertinentSuggestModal extends SuggestModal<string> {
 	categories: string[];
 	contacts: Contact[];
 	outputFolder: string;
-	questionsFolder: string;
+	questionsOrActionsFolder: string;
 	vault: Vault;
+	commandQuestion: boolean;
 
 
-	constructor(app: App, categories: string[], contacts: Contact[], outputFolder: string, questionsFolder: string) {
+	constructor(app: App, commandQuestion: boolean, categories: string[], contacts: Contact[], outputFolder: string, questionsOrActionsFolder: string) {
 		super(app);
 		this.vault = app.vault;
+		this.commandQuestion = commandQuestion;
 		this.categories = categories;
 		this.contacts = contacts;
 		this.outputFolder = outputFolder;
-		this.questionsFolder = questionsFolder;
+		this.questionsOrActionsFolder = questionsOrActionsFolder;
 	}
 	// Returns all available suggestions.
 	getSuggestions(query: string): string[] {
@@ -292,23 +306,24 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 	// Perform action on the selected suggestion.
 	async onChooseSuggestion(cat: string, evt: MouseEvent | KeyboardEvent) {
 
-		this.createFolder(this.outputFolder); // Pertinent Questions folder
-		let theContent = '\n\n## Contacts\n> [!NOTE]\n>**Remember - send the questions to your friends, family, colleagues and local businesses first and foremost to avoid central censorship.**\n>\n> *To pose a pertinent question, the question must first be unapposed.*\n\nBelow is a short list of some country political representatives and WEF aligned companies. For further information, see: https://en.wikipedia.org/wiki/List_of_legislatures_by_country';
+		this.createFolder(this.outputFolder); // Pertinent Questions or Actions folder
+		let theContent = Constants.CONTACTS_HEADER;
 
 		theContent = theContent.concat(Constants.WEF_COMPANIES);
-		theContent = theContent.concat('\n### Australia\n- List Senators and Members: https://www.aph.gov.au/Senators_and_Members/Parliamentarian_Search_Results?q=&mem=1&par=-1&gen=0&ps=0');
-		theContent = theContent.concat('\n### Canada\n- List of MPs: https://www.ourcommons.ca/members/en/search');
-		theContent = theContent.concat('\n### EU\n- List of MEPs: https://www.europarl.europa.eu/meps/en/full-list/all');
-		theContent = theContent.concat('\n### Finland\n- List of MPs: https://www.eduskunta.fi/EN/kansanedustajat/nykyiset_kansanedustajat/Pages/default.aspx');
-		theContent = theContent.concat('\n### Germany\n- List of MPs: https://www.bundestag.de/en/members');
-		theContent = theContent.concat('\n### Ireland\n- List of TDs and Senators: https://www.oireachtas.ie/en/members/');
-		theContent = theContent.concat('\n### Netherlands\n- List of MPs: https://www.houseofrepresentatives.nl/members_of_parliament/members_of_parliament');
-		theContent = theContent.concat('\n### New Zealand\n- List of MPs: https://www.parliament.nz/en/mps-and-electorates/members-of-parliament/');
-		theContent = theContent.concat('\n### Norway\n- List of MPs: https://www.stortinget.no/en/In-English/Members-of-the-Storting/current-members-of-parliament/');
-		theContent = theContent.concat('\n### Sweden\n- List of MPs: https://www.riksdagen.se/en/Members-and-parties/');
-		theContent = theContent.concat('\n### Switzerland\n- List of MPs: https://www.parlament.ch/en/organe/national-council/members-national-council-a-z');
-		theContent = theContent.concat('\n### UK\n- Spreadsheet list of MPs: https://www.theyworkforyou.com/mps/?f=csv\n- Find your MP: https://members.parliament.uk/members/commons\n- Find a Lord: https://members.parliament.uk/members/lords');
-		theContent = theContent.concat('\n### US\n- List of Senators: https://www.senate.gov/senators/');
+		theContent = theContent.concat(Constants.AUSTRALIA_POLITICAL_CONTACTS);
+		theContent = theContent.concat(Constants.CANADA_POLITICAL_CONTACTS);
+		theContent = theContent.concat(Constants.EU_POLITICAL_CONTACTS);
+		theContent = theContent.concat(Constants.FINLAND_POLITICAL_CONTACTS);
+		theContent = theContent.concat(Constants.GERMANY_POLITICAL_CONTACTS);
+		theContent = theContent.concat(Constants.IRELAND_POLITICAL_CONTACTS);
+		theContent = theContent.concat(Constants.NETHERLANDS_POLITICAL_CONTACTS);
+		theContent = theContent.concat(Constants.NEW_ZEALAND_POLITICAL_CONTACTS);
+		theContent = theContent.concat(Constants.NORWAY_POLITICAL_CONTACTS);
+		theContent = theContent.concat(Constants.SWEDEN_POLITICAL_CONTACTS);
+		theContent = theContent.concat(Constants.SWITZERLAND_POLITICAL_CONTACTS);
+		theContent = theContent.concat(Constants.UK_POLITICAL_CONTACTS);
+		theContent = theContent.concat(Constants.US_POLITICAL_CONTACTS);
+
 
 		this.createFile(Constants.PERTINENT_CONTACTS_FILE, theContent);
 
@@ -318,57 +333,57 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 		} else {
 			this.categories.shift(); // remove ALL_CATEGORIES and iterate through ALL categories
 		}
-		// FOREEACH Question Category
-		let totalQuestionCount = 0;
+		// FOREEACH Question or Action Category
+		let totalQuestionOrActionCount = 0;
 
 		theContent = "";
 		for (let j = 0; j < this.categories.length; j++) {
-			let catQuestionsCount = 0;
+			let categoriesCount = 0;
 			console.debug(`cat ${j} = ${this.categories[j]}`);
 			// Get all the questions
-			let theQuestions = await this.getCategoryQuestions(this.categories[j]);
+			let theQorAs = await this.getCategoryQuestionsOrActions(this.categories[j]); // theQuestionOrActions
 
 
 			const theFolder = this.outputFolder.concat(Constants.MAC_FOLDER_SEPARATOR).concat(this.categories[j]);
-			if (theQuestions != null) { // No category questions, so don't create a category folder or option
+			if (theQorAs != null) { // No category questions or actions?  
 				// need the directory separator 
 				this.createFolder(theFolder); // Create the categories
 				// FOREACH Email Contact
-				catQuestionsCount = theQuestions.length;
+				categoriesCount = theQorAs.length;
 				if (this.contacts.length > 0) {
 					for (let i = 0; i < this.contacts.length; i++) {
-						for (let k = 0; k < theQuestions.length; k++) {
-							let theQuestion = theQuestions[k];
-							this.writeQuestionFile(theQuestion, theFolder, this.categories[j], this.contacts.at(i));
-							totalQuestionCount++;
+						for (let k = 0; k < theQorAs.length; k++) {
+							let theQorA = theQorAs[k];
+							this.commandQuestion ? this.writeQuestionFile(theQorA, theFolder, this.categories[j], this.contacts.at(i)) : this.writeActionFile(theQorA, theFolder, this.categories[j]);
+							totalQuestionOrActionCount++;
 						}
 					} //End FOREACH contact
 				} else {
-					for (let k = 0; k < theQuestions.length; k++) {
-
-						let theQuestion = theQuestions[k];
-						this.writeQuestionFile(theQuestion, theFolder, this.categories[j]);
-						totalQuestionCount++;
+					for (let k = 0; k < theQorAs.length; k++) {
+						let theQorA = theQorAs[k];
+						this.commandQuestion ? this.writeQuestionFile(theQorA, theFolder, this.categories[j]) : this.writeActionFile(theQorA, theFolder, this.categories[j]);
+						totalQuestionOrActionCount++;
 					}
 				}
 
 			} else {
-				console.warn(`Couldn't read any file at ${this.questionsFolder} `);
+				console.warn(`Couldn't read any file at ${this.questionsOrActionsFolder} `);
 			}
 
-			// Write index files
-			const cat = this.categories[j];
-			const theFileName = theFolder.concat("/").concat(cat + Constants.CAT_INDEX_SUFFIX);
-			theContent = `---\npublish: true\nsent: false\ncategory: ${cat}\n---\n## Instructions\n- [FAQ and Help](https://projectbubbleburst.com/Pertinent+Questions+Help)\n\n- [Support Us](https://projectbubbleburst.com/Support+Us)\n\n## ${cat} Pertinent Questions\n`;
-			for (let q = 0; q < catQuestionsCount; q++) {
-				const qPlus = q + 1;
-				theContent = theContent.concat("- " + Constants.PBB_ROOT.concat(cat) + `-${qPlus}\n`)
-			}
-			theContent = theContent.concat(Constants.FOOTER_EMBED);
-			theContent = theContent.concat(Constants.EMAIL_NL + Constants.NUM_QUESTIONS + catQuestionsCount);
-			// debugger;
-			this.createFile(theFileName, theContent);
-
+			// Write index files for questions, no need for actions
+			// if (this.commandQuestion) {
+			// 	const cat = this.categories[j];
+			// 	const theFileName = theFolder.concat("/").concat(cat + Constants.CAT_INDEX_SUFFIX);
+			// 	theContent = `---\npublish: true\nsent: false\ncategory: ${cat}\n---\n## Instructions\n- [FAQ and Help](https://projectbubbleburst.com/Pertinent+Questions+Help)\n\n- [Support Us](https://projectbubbleburst.com/Support+Us)\n\n## ${cat} Pertinent Questions\n`;
+			// 	for (let q = 0; q < categoriesCount; q++) {
+			// 		const qPlus = q + 1;
+			// 		theContent = theContent.concat("- " + Constants.PBB_ROOT.concat(cat) + `-${qPlus}\n`)
+			// 	}
+			// 	theContent = theContent.concat(Constants.FOOTER_EMBED);
+			// 	theContent = theContent.concat(Constants.EMAIL_NL + Constants.NUM_QUESTIONS + categoriesCount);
+			// 	// debugger;
+			// 	this.createFile(theFileName, theContent);
+			// }
 
 		} //End FOREACH category
 
@@ -376,9 +391,9 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 
 		theContent = "";
 		theContent = theContent.concat(Constants.FOOTER_EMBED);
-		theContent = theContent.concat(`<div align=center>`+ Constants.TOTAL_NUM_QUESTIONS + totalQuestionCount + `</div>`);
+//		theContent = theContent.concat(`<div align=center>` + Constants.TOTAL_NUM_QUESTIONS + totalQuestionOrActionCount + `</div>`);
 		this.createFile("/Footer.md", theContent);
-		new Notice(`${cat} questions created/updated`);
+		new Notice(`${cat} questions/actions created/updated`);
 
 
 	}
@@ -395,7 +410,7 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 		return itHas;
 	}
 
-	
+
 	getTags(tags: string) {
 		let theTags = "";
 		if (tags == null) {
@@ -439,7 +454,7 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 		}
 		return theDeadline;
 	}
-	formatHashtags(theQuestion: QuestionInfo): string {
+	formatHashtags(theQuestion: QorAInfo): string {
 		let theTags = "";
 		if (theQuestion.tags.length > 0) {
 			const tagsArray = theQuestion.tags.replace(/,/g, ' ').split(' '); // Replace commas with spaces and then split
@@ -451,8 +466,7 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 		}
 		return theTags;
 	}
-	async writeQuestionFile(theQuestion: QuestionInfo, theFolder: string, category: string, contact?: Contact) {
-		const aCampaign = this.hasAssignedValue(theQuestion.campaign);
+	async writeQuestionFile(theQuestion: QorAInfo, theFolder: string, category: string, contact?: Contact) {
 		const hasAnAlias = this.hasAssignedValue(theQuestion.alias);
 
 		let deadline = this.getDeadline(theQuestion.deadline);
@@ -466,22 +480,16 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 		}
 
 		let theFileFrontMatter = "";
-		if (aCampaign) {
-			if (hasAnAlias){
-				theFileFrontMatter = `---\npublish: true\nsent: false\nalias: ${theQuestion.alias}\ncategory: ${category}\ncampaign: ${aCampaign}${deadline}${tags}\n---\n## Instructions\n[FAQ and Help](https://projectbubbleburst.com/Pertinent+Questions+Help)\n\n- reSearch - The content and reSearch Media. Make sure you personalise your email with your own reasoned arguments and feelings.\n- Send It!\n- Share It!\n- [Support Us](https://projectbubbleburst.com/Support+Us)\n\n## Send It\nPersonalise the message below\n\n`;
-			}else{
-				theFileFrontMatter = `---\npublish: true\nsent: false\ncategory: ${category}\ncampaign: ${aCampaign}${deadline}${tags}\n---\n## Instructions\n[FAQ and Help](https://projectbubbleburst.com/Pertinent+Questions+Help)\n\n- reSearch - The content and reSearch Media. Make sure you personalise your email with your own reasoned arguments and feelings.\n- Send It!\n- Share It!\n- [Support Us](https://projectbubbleburst.com/Support+Us)\n\n## Send It\nPersonalise the message below\n\n`;
-			}
 
+		if (hasAnAlias) {
+			theFileFrontMatter = `---\npublish: true\nsent: false\nalias: ${theQuestion.alias}\ncategory: ${category}${tags}\n---\n`.concat(Constants.INSTRUCTIONS_FAQ_DETAILED);
 
 		} else {
-			if (hasAnAlias){
-				theFileFrontMatter = `---\npublish: true\nsent: false\nalias: ${theQuestion.alias}\ncategory: ${category}${tags}\n---\n## Instructions\n[FAQ and Help](https://projectbubbleburst.com/Pertinent+Questions+Help)\n\n- reSearch - The content and reSearch Media. Make sure you personalise your email with your own reasoned arguments and feelings.\n- Send It!\n- Share It!\n- [Support Us](https://projectbubbleburst.com/Support+Us)\n\n## Send It\nPersonalise the message below\n\n`;
-			}else{
-				theFileFrontMatter = `---\npublish: true\nsent: false\ncategory: ${category}${tags}\n---\n## Instructions\n[FAQ and Help](https://projectbubbleburst.com/Pertinent+Questions+Help)\n\n- reSearch - The content and reSearch Media. Make sure you personalise your email with your own reasoned arguments and feelings.\n- Send It!\n- Share It!\n- [Support Us](https://projectbubbleburst.com/Support+Us)\n\n## Send It\nPersonalise the message below\n\n`;
-			}
+			theFileFrontMatter = `---\npublish: true\nsent: false\ncategory: ${category}${tags}\n---\n`.concat(Constants.INSTRUCTIONS_FAQ_DETAILED);
 
 		}
+
+
 
 		const theQuestionFile: string[] = theQuestion.body.split(Constants.EMAIL_NL, 2);
 		let theQuestionFileName = "";
@@ -499,6 +507,7 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 		if (indexBodyStart != undefined) {
 			let theBody = "";
 			let theFileName = "";
+
 			if (contact) {
 				theBody = `${Constants.FAO} ${contact.title} ${contact.firstName} ${contact.lastName}` + Constants.EMAIL_NL + `${theQuestionBody}`;
 				// Create Pertinent Questions File using First Name and Last Name
@@ -507,6 +516,8 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 				theBody = `${Constants.FAO}` + Constants.EMAIL_NL + `${theQuestionBody}`;
 				theFileName = theFolder.concat("/").concat(theQuestionFileName) + ".md";
 			}
+
+
 			// File does not exist, so create
 			let theFile = await this.createFile(theFileName, theFileFrontMatter);
 
@@ -516,13 +527,15 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 				let re = /"/g;
 				const lineStart = Constants.EMAIL_NL.concat(Constants.EMAIL_SOL);
 				theBody = theBody.concat(lineStart);
-				theBody = theBody.concat(`More About ${category}: `).concat(Constants.PBB_PQ_DIR).concat(category).concat(`/${category}-Index`);
+	//			theBody = theBody.concat(`More About ${category}: `).concat(Constants.PBB_PQ_DIR).concat(category).concat(`/${category}-Index`);
 
 				theBody = theBody.replace(re, "%22") // Escape double quote chars
 				re = /`/g;
-				theBody = theBody.replace(re, "%60") // Escape double quote
+				theBody = theBody.replace(re, "%60") // Escape single quote
 				re = /---(\n|.)*?---/g;
 				theBody = theBody.replace(re, "") // Remove any front matter kept in error
+				re = /\[/g;
+				theBody = theBody.replace(re,""); // Remove any wikilinks
 				if (contact) {
 					theContent = "```email\n".concat(`to: ${contact.emailAddress}\nsubject: ${Constants.SUBJECT_GOES_HERE}\n`);
 				} else {
@@ -531,7 +544,7 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 				}
 
 				theContent = theContent.concat(`body: \"${theBody}\"\n`).concat("```\n");
-				if (theQuestion.mentioned.length > 0){
+				if (theQuestion.mentioned.length > 0) {
 					theContent = theContent.concat(Constants.MENTIONED_SPECIFIER).concat(theQuestion.mentioned).concat(`\n`);
 				}
 				theContent = theContent.concat('> [!NOTE] Note\n>Please see [[Pertinent Contacts|Contacts]] for political representatives and other ideas for who to send information\n## Share It\n');
@@ -567,11 +580,6 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 
 				theContent = theContent.concat(Constants.EMAIL_NL).concat(Constants.FOOTER_SPECIFIER);
 
-
-
-
-
-
 				try {
 					await this.app.vault.append(theFile, theContent);
 				} catch (e) {
@@ -584,6 +592,116 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 		} // endif index undefined
 	}
 
+
+	async writeActionFile(theAction: QorAInfo, theFolder: string, category: string, contact?: Contact) {
+		const hasAnAlias = this.hasAssignedValue(theAction.alias);
+
+		let deadline = this.getDeadline(theAction.deadline);
+		if (deadline != "") {
+			deadline = "\n".concat(deadline);
+		}
+
+		let tags = this.getTags(theAction.tags);
+		if (tags != "") {
+			tags = "\n".concat(tags);
+		}
+
+		let theFileFrontMatter = "";
+
+		if (hasAnAlias) {
+			theFileFrontMatter = `---\npublish: true\nsent: false\nalias: ${theAction.alias}\ncategory: ${category}\naction: true\n${deadline}${tags}\n---\n`.concat(Constants.INSTRUCTIONS_FAQ);
+
+		} else {
+			theFileFrontMatter = `---\npublish: true\nsent: false\ncategory: ${category}\naction: true\n${deadline}${tags}\n---\n`.concat(Constants.INSTRUCTIONS_FAQ);
+
+		}
+
+
+		const theActionFile: string[] = theAction.body.split(Constants.EMAIL_NL, 2);
+		let theActionFileName = "";
+
+		if (theAction.qshort != undefined && theAction.qshort.length > 0) {
+			theActionFileName = theAction.qshort.trimStart().trimEnd();
+		} else {
+			theActionFileName = theActionFile[0];
+		}
+
+
+		const indexBodyStart = theAction.body.indexOf(Constants.EMAIL_NL) + Constants.EMAIL_NL.length; // First line is the filename
+		const theQuestionBody = theAction.body.substring(indexBodyStart);
+
+		if (indexBodyStart != undefined) {
+			let theBody = "";
+			let theFileName = "";
+
+			theBody = theQuestionBody;
+			theFileName = theFolder.concat("/").concat(theActionFileName) + ".md";
+
+
+			// File does not exist, so create
+			let theFile = await this.createFile(theFileName, theFileFrontMatter);
+
+
+			if (theFile instanceof TFile) {
+				let theContent = "";
+				let re = /"/g;
+				const lineStart = Constants.EMAIL_NL.concat(Constants.EMAIL_SOL);
+				theBody = theBody.concat(lineStart);
+//				theBody = theBody.concat(`More About ${category}: `).concat(Constants.PBB_PQ_DIR).concat(category).concat(`/${category}-Index`);
+
+
+				re = /---(\n|.)*?---/g;
+				theBody = theBody.replace(re, "") // Remove any front matter kept in error
+
+
+				theContent = theContent.concat(theBody + "\n");
+				if (theAction.mentioned.length > 0) {
+					theContent = theContent.concat(Constants.MENTIONED_SPECIFIER).concat(theAction.mentioned).concat(`\n`);
+				}
+				theContent = theContent.concat('> [!NOTE] ' + Constants.PERTINENT_CONTACTS_REFERENCE);
+				//	theContent = theContent.constructTweet(tweet);
+				// See https://en.wikipedia.org/wiki/URL_encoding
+
+				let tweet = Constants.TWEET;
+				let tweetBody = this.formatHashtags(theAction);
+
+				re = / /g;
+				tweetBody = tweetBody.concat(Constants.PBB_PQ_DIR).concat(theActionFileName.replace(re, '+'));
+				tweet = tweet.concat(encodeURIComponent(tweetBody)).concat(')\n');
+				theContent = theContent.concat(tweet);
+
+				let fb = Constants.FACEBOOK_POST;
+				let fbBody = this.formatHashtags(theAction);
+
+				fbBody = fbBody.concat(Constants.PBB_PQ_DIR).concat(theActionFileName.replace(re, '+'));
+				fb = fb.concat(encodeURIComponent(fbBody)).concat(')\n\n');
+				theContent = theContent.concat(fb);
+
+
+				theContent = theContent.concat(Constants.RESEARCH_MEDIA_HEADING);
+				theContent = theContent.concat(Constants.IMAGE_MEDIA_HEADING)
+				if (theAction.image.length > 0) {
+					theContent = theContent.concat(Constants.EMAIL_NL).concat(theAction.image);
+				}
+				theContent = theContent.concat(Constants.VIDEO_HEADING);
+				if (theAction.video.length > 0) {
+					// theContent = theContent.concat(Constants.VIDEO_EMBED1).concat(theQuestion.video).concat(Constants.VIDEO_EMBED2);
+					theContent = theContent.concat(theAction.video);
+				}
+
+				theContent = theContent.concat(Constants.EMAIL_NL).concat(Constants.FOOTER_SPECIFIER);
+
+				try {
+					await this.app.vault.append(theFile, theContent);
+				} catch (e) {
+					console.error(`Could not append to file: ${theFileName} due to ${e}`);
+				}
+			}
+			else {
+				console.error(`Error - could not create file for ${theFileName}`);
+			}
+		} // endif index undefined
+	}
 	// function constructTweet(str: string): string | null {
 	// 	const regex = /\/([^\/]*)\//;
 	// 	const match = str.match(regex);
@@ -617,14 +735,14 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 	}
 
 	// getCategoryQuestions adds the file name as the first line/element in the return string
-	async getCategoryQuestions(category: string): Promise<QuestionInfo[] | null> {
+	async getCategoryQuestionsOrActions(category: string): Promise<QorAInfo[] | null> {
 
 		try {
 			// concat the / as all folders need to be devoid of / slashes to work with abstractFilePath impl I have
-			const folderOrFile = this.app.vault.getAbstractFileByPath(this.questionsFolder.concat(Constants.MAC_FOLDER_SEPARATOR.concat(category)));
+			const folderOrFile = this.app.vault.getAbstractFileByPath(this.questionsOrActionsFolder.concat(Constants.MAC_FOLDER_SEPARATOR.concat(category)));
 
 			if (folderOrFile instanceof TFolder) {
-				const theQuestions: QuestionInfo[] = [];
+				const theQuestions: QorAInfo[] = [];
 				for (let child of folderOrFile.children) {
 					if (child instanceof TFile) {
 						if (child.extension.endsWith("md")) {
@@ -632,7 +750,7 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 							const index = child.path.lastIndexOf(Constants.MAC_FOLDER_SEPARATOR); // Folder path / fileName
 							if (index != undefined) {
 								let theFileFullPath = child.path + "\n"; // Add file name
-								const theQuestion: QuestionInfo = { body: "", image: "", video: "", tags: "", campaign: "", deadline: "", alias: "", qshort: "", mentioned: ""};
+								const theQuestion: QorAInfo = { body: "", image: "", video: "", tags: "", action: "", deadline: "", alias: "", qshort: "", mentioned: "" };
 								theQuestion.body = theFileFullPath.substring(index + 1, theFileFullPath.length - 4); // First line of interim file is filename
 
 								const questionLines = theQuestionLines.split("\n");
@@ -647,7 +765,7 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 									} else if (questionLines[i].contains(Constants.TAGS_SPECIFIER)) {
 										theQuestion.tags = questionLines[i].split(Constants.TAGS_SPECIFIER)[1];
 									} else if (questionLines[i].contains(Constants.CAMPAIGN_SPECIFIER)) {
-										theQuestion.campaign = questionLines[i].split(Constants.CAMPAIGN_SPECIFIER)[1];
+										theQuestion.action = questionLines[i].split(Constants.CAMPAIGN_SPECIFIER)[1];
 									} else if (questionLines[i].contains(Constants.DEADLINE_SPECIFIER)) {
 										theQuestion.deadline = questionLines[i].split(Constants.DEADLINE_SPECIFIER)[1];
 									} else if (questionLines[i].contains(Constants.ALIAS_SPECIFIER)) {
@@ -671,7 +789,7 @@ class PertinentQuestionsSuggestModal extends SuggestModal<string> {
 
 				return theQuestions;
 			} else {
-				console.warn(`Expected folder in getCategoryQuestions param but sent ${this.questionsFolder.concat(category)}`);
+				console.warn(`Expected folder in getCategoryQuestions param but sent ${this.questionsOrActionsFolder.concat(category)}`);
 				return null;
 			}
 		} catch (e) {
@@ -705,10 +823,10 @@ class PertinentSettingTab extends PluginSettingTab {
 		containerEl.createEl('h2', { text: 'General Settings' });
 
 		new Setting(containerEl)
-			.setName('Questions Folder')
+			.setName('Questions Input Folder')
 			.setDesc('Enter the Folder Location')
 			.addText(text => text
-				.setPlaceholder('Enter Questions Folder')
+				.setPlaceholder('Enter Questions Input Folder')
 				.setValue(this.plugin.settings.questionsFolder)
 				.onChange(async (value) => {
 					console.debug('Questions Location: ' + value);
@@ -717,17 +835,39 @@ class PertinentSettingTab extends PluginSettingTab {
 				}));
 
 		new Setting(containerEl)
+			.setName('Actions Input Folder')
+			.setDesc('Enter the Folder Location')
+			.addText(text => text
+				.setPlaceholder('Enter Actions Folder')
+				.setValue(this.plugin.settings.actionsFolder)
+				.onChange(async (value) => {
+					console.debug('Actions Location: ' + value);
+					this.plugin.settings.actionsFolder = value;
+					await this.plugin.saveSettings();
+				}));
+		new Setting(containerEl)
 			.setName('Questions Output Folder')
 			.setDesc('Enter the Pertinent Questions Output Folder Location')
 			.addText(text => text
 				.setPlaceholder('Enter Pertinent Questions Output Folder')
-				.setValue(this.plugin.settings.outputFolder)
+				.setValue(this.plugin.settings.questionsOutputFolder)
 				.onChange(async (value) => {
 					console.debug('Output Folder Location: ' + value);
-					this.plugin.settings.outputFolder = value;
+					this.plugin.settings.questionsOutputFolder = value;
 					await this.plugin.saveSettings();
 				}));
 
+		new Setting(containerEl)
+			.setName('Actions Output Folder')
+			.setDesc('Enter the Pertinent Actions Output Folder Location')
+			.addText(text => text
+				.setPlaceholder('Enter Pertinent Actions Output Folder')
+				.setValue(this.plugin.settings.actionsOutputFolder)
+				.onChange(async (value) => {
+					console.debug('Output Folder Location: ' + value);
+					this.plugin.settings.actionsOutputFolder = value;
+					await this.plugin.saveSettings();
+				}));
 		new Setting(containerEl)
 			.setName(Constants.CONTACTS_IMPORT_FILE)
 			.setDesc('Enter the Contacts Import File Location')

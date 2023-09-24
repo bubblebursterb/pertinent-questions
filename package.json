@@ -1,7 +1,7 @@
 {
-	"name": "pertinent-questions",
-	"version": "0.0.1",
-	"description": "Critical Thinking with Pertinent Questions. Ask your friends, family, colleagues and political representatives these questions to stimulate thought and debate",
+	"name": "pertinent-questions-and-actions",
+	"version": "0.1.1",
+	"description": "Critical Thinking with Pertinent Questions and Taking Action. Ask your friends, family, colleagues and political representatives these questions to stimulate thought and debate",
 	"main": "main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
