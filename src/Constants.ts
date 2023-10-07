@@ -30,10 +30,10 @@ export class AppSettings{
     public static PBB_PQ_DIR = `https://projectbubbleburst.com/Pertinent+Questions/`;
     public static PBB_ROOT = `https://projectbubbleburst.com/`;
     public static VIDEO_HEADING = `\n### Video\n`;
-    public static RESEARCH_MEDIA_HEADING = `## reSearch Media\n`;
+    public static RESEARCH_MEDIA_HEADING = `\n## reSearch Media\n`;
     public static IMAGE_MEDIA_HEADING = `### Image\n`
-    public static TWEET = `[Twitter](https://twitter.com/intent/tweet?text=`;
-    public static FACEBOOK_POST = `[Facebook](https://www.facebook.com/sharer.php?u=`;
+    // public static TWEET = `[Twitter](https://twitter.com/intent/tweet?text=`;
+    // public static FACEBOOK_POST = `[Facebook](https://www.facebook.com/sharer.php?u=`;
     public static NUM_QUESTIONS = `Number of Category Pertinent Questions = `;
     public static TOTAL_NUM_QUESTIONS = `Total Number of Pertinent Questions = `;
     public static WEF_COMPANIES = `'\n\n### Global\n- WEF Companies - https://www.weforum.org/partners#search [Let them know where your money will not be spent](https://projectbubbleburst.com/Actions/Action+18+-+Let+them+know+-+FTheWEF)`;
@@ -52,7 +52,7 @@ export class AppSettings{
     public static SWITZERLAND_POLITICAL_CONTACTS = '\n### Switzerland\n- List of MPs: https://www.parlament.ch/en/organe/national-council/members-national-council-a-z';
     public static UK_POLITICAL_CONTACTS = '\n### UK\n- Spreadsheet list of MPs: https://www.theyworkforyou.com/mps/?f=csv\n- Find your MP: https://members.parliament.uk/members/commons\n- Find a Lord: https://members.parliament.uk/members/lords';
     public static US_POLITICAL_CONTACTS = '\n### US\n- List of Senators: https://www.senate.gov/senators/';
-    public static PERTINENT_CONTACTS_REFERENCE = 'Note\n>Please see [[Pertinent Contacts|Contacts]] for political representatives and other ideas for who to send information\n## Share It\n';
+    public static PERTINENT_CONTACTS_REFERENCE = 'Note\n>Please see [[Pertinent Contacts|Contacts]] for political representatives and other ideas for who to send information\n## Share It\nCopy and paste the information above and/or images/videos below and share via your social media accounts.';
     public static INSTRUCTIONS_FAQ = `## Instructions\n[FAQ and Help](https://projectbubbleburst.com/Pertinent+Questions+Help)\n\n- [Support Us](https://projectbubbleburst.com/Support+Us)\n\n## Take Action\n`;
     public static INSTRUCTIONS_FAQ_DETAILED = `## Instructions\n[FAQ and Help](https://projectbubbleburst.com/Pertinent+Questions+Help)\n\n- reSearch - The content and reSearch Media. Make sure you personalise your email with your own reasoned arguments and feelings.\n- Send It!\n- Share It!\n- [Support Us](https://projectbubbleburst.com/Support+Us)\n\n## Send It\nPersonalise the message below\n\n`;
 

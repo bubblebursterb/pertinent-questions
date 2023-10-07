@@ -547,24 +547,24 @@ class PertinentSuggestModal extends SuggestModal<string> {
 				if (theQuestion.mentioned.length > 0) {
 					theContent = theContent.concat(Constants.MENTIONED_SPECIFIER).concat(theQuestion.mentioned).concat(`\n`);
 				}
-				theContent = theContent.concat('> [!NOTE] Note\n>Please see [[Pertinent Contacts|Contacts]] for political representatives and other ideas for who to send information\n## Share It\n');
+				theContent = theContent.concat('> [!NOTE] Note\n>Please see [[Pertinent Contacts|Contacts]] for political representatives and other ideas for who to send information\n## Share It\nCopy and paste the information above and/or images/videos below and share via your social media accounts.');
 				//	theContent = theContent.constructTweet(tweet);
 				// See https://en.wikipedia.org/wiki/URL_encoding
 
-				let tweet = Constants.TWEET;
-				let tweetBody = this.formatHashtags(theQuestion);
+				// let tweet = Constants.TWEET;
+				// let tweetBody = this.formatHashtags(theQuestion);
 
-				re = / /g;
-				tweetBody = tweetBody.concat(Constants.PBB_PQ_DIR).concat(theQuestionFileName.replace(re, '+'));
-				tweet = tweet.concat(encodeURIComponent(tweetBody)).concat(')\n');
-				theContent = theContent.concat(tweet);
+				// re = / /g;
+				// tweetBody = tweetBody.concat(Constants.PBB_PQ_DIR).concat(theQuestionFileName.replace(re, '+'));
+				// tweet = tweet.concat(encodeURIComponent(tweetBody)).concat(')\n');
+				// theContent = theContent.concat(tweet);
 
-				let fb = Constants.FACEBOOK_POST;
-				let fbBody = this.formatHashtags(theQuestion);
+				// let fb = Constants.FACEBOOK_POST;
+				// let fbBody = this.formatHashtags(theQuestion);
 
-				fbBody = fbBody.concat(Constants.PBB_PQ_DIR).concat(theQuestionFileName.replace(re, '+'));
-				fb = fb.concat(encodeURIComponent(fbBody)).concat(')\n\n');
-				theContent = theContent.concat(fb);
+				// fbBody = fbBody.concat(Constants.PBB_PQ_DIR).concat(theQuestionFileName.replace(re, '+'));
+				// fb = fb.concat(encodeURIComponent(fbBody)).concat(')\n\n');
+				// theContent = theContent.concat(fb);
 
 
 				theContent = theContent.concat(Constants.RESEARCH_MEDIA_HEADING);
@@ -662,20 +662,20 @@ class PertinentSuggestModal extends SuggestModal<string> {
 				//	theContent = theContent.constructTweet(tweet);
 				// See https://en.wikipedia.org/wiki/URL_encoding
 
-				let tweet = Constants.TWEET;
-				let tweetBody = this.formatHashtags(theAction);
+				// let tweet = Constants.TWEET;
+				// let tweetBody = this.formatHashtags(theAction);
 
-				re = / /g;
-				tweetBody = tweetBody.concat(Constants.PBB_PQ_DIR).concat(theActionFileName.replace(re, '+'));
-				tweet = tweet.concat(encodeURIComponent(tweetBody)).concat(')\n');
-				theContent = theContent.concat(tweet);
+				// re = / /g;
+				// tweetBody = tweetBody.concat(Constants.PBB_PQ_DIR).concat(theActionFileName.replace(re, '+'));
+				// tweet = tweet.concat(encodeURIComponent(tweetBody)).concat(')\n');
+				// theContent = theContent.concat(tweet);
 
-				let fb = Constants.FACEBOOK_POST;
-				let fbBody = this.formatHashtags(theAction);
+				// let fb = Constants.FACEBOOK_POST;
+				// let fbBody = this.formatHashtags(theAction);
 
-				fbBody = fbBody.concat(Constants.PBB_PQ_DIR).concat(theActionFileName.replace(re, '+'));
-				fb = fb.concat(encodeURIComponent(fbBody)).concat(')\n\n');
-				theContent = theContent.concat(fb);
+				// fbBody = fbBody.concat(Constants.PBB_PQ_DIR).concat(theActionFileName.replace(re, '+'));
+				// fb = fb.concat(encodeURIComponent(fbBody)).concat(')\n\n');
+				// theContent = theContent.concat(fb);
 
 
 				theContent = theContent.concat(Constants.RESEARCH_MEDIA_HEADING);
